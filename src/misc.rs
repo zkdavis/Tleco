@@ -16,7 +16,7 @@
 
 use std::fs::File;
 use std::io::{self, BufRead};
-
+use ndarray::Array1;
 
 pub fn an_error(string: &str) {
     panic!("ERROR {}", string);
@@ -179,14 +179,14 @@ pub fn chebev(x: f64, coef: &[f64], xmin: f64, xmax: f64) -> Result<f64, &'stati
     Ok(y * d - dd + 0.5 * coef[0])
 }
 
-pub fn tridag_ser(a: &[f64], b: &[f64], c: &[f64], r: &[f64]) -> Result<Vec<f64>, &'static str> {
+pub fn tridag_ser(a: &Array1<f64>, b: &Array1<f64>, c: &Array1<f64>, r: &Array1<f64>) -> Array1<f64> {
     let n = b.len();
     let mut u = vec![0.0; n];
     let mut gam = vec![0.0; n];
 
     let mut bet = b[0];
     if bet == 0.0 {
-        return Err("tridag_ser: error at code stage 1");
+        panic!("tridag_ser: error at code stage 1");
     }
     u[0] = r[0] / bet;
 
@@ -194,7 +194,7 @@ pub fn tridag_ser(a: &[f64], b: &[f64], c: &[f64], r: &[f64]) -> Result<Vec<f64>
         gam[j] = c[j - 1] / bet;
         bet = b[j] - a[j - 1] * gam[j];
         if bet == 0.0 {
-            return Err("tridag_ser: error at code stage 2");
+            panic!("tridag_ser: error at code stage 2");
         }
         u[j] = (r[j] - a[j - 1] * u[j - 1]) / bet;
     }
@@ -203,7 +203,7 @@ pub fn tridag_ser(a: &[f64], b: &[f64], c: &[f64], r: &[f64]) -> Result<Vec<f64>
         u[j] -= gam[j + 1] * u[j + 1];
     }
 
-    Ok(u)
+    u.into()
 }
 
 

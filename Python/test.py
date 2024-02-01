@@ -19,3 +19,4 @@ ax.set_xlim([10, 1e4])
 ax.set_ylim([1e-8, 1e-1])
 ax.plot(g,n)
 plt.show()
+

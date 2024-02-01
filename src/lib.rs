@@ -39,11 +39,26 @@ fn eq_59_park1995(t: f64, g: Vec<f64>) -> PyResult<Vec<f64>> {
     Ok(result.to_vec())
 }
 
+#[pyfunction]
+fn fp_findif_difu(dt_in: f64, g: Vec<f64>, nin: Vec<f64>, gdot_in: Vec<f64>,
+              din: Vec<f64>, qin: Vec<f64>, tesc_in: f64, tlc: f64,
+              check_params: Option<bool>) -> PyResult<Vec<f64>>{
+    let g_array = ArrayView1::from(&g).to_owned();
+    let nin_array = ArrayView1::from(&nin).to_owned();
+    let gdot_in_array = ArrayView1::from(&gdot_in).to_owned();
+    let din_array = ArrayView1::from(&din).to_owned();
+    let qin_array = ArrayView1::from(&qin).to_owned();
+    let result = distribs::fp_findif_difu(dt_in, &g_array,&nin_array,&gdot_in_array,&din_array,&qin_array,tesc_in,tlc,check_params);
+    Ok(result.to_vec())
+    }
+
+
 /// A Python module implemented in Rust.
 #[pymodule]
 fn pyparamo(_py: Python, m: &PyModule) -> PyResult<()> {
     m.add_function(wrap_pyfunction!(get_pi, m)?)?;
     m.add_function(wrap_pyfunction!(bofg, m)?)?;
     m.add_function(wrap_pyfunction!(eq_59_park1995, m)?)?;
+    m.add_function(wrap_pyfunction!(fp_findif_difu, m)?)?;
     Ok(())
 }
