@@ -19,14 +19,14 @@ pub fn eq_59_park1995(t: f64, g: ArrayView1<f64>) -> Array1<f64> {
     let size = g.len();
     let mut gf = Array1::<f64>::zeros(size);
 
-    let d_cof = 1.0;
+    let d_cof: f64 = 1.0;
     let q: f64 = 3.0;
-    let a = 1.0;
-    let x0 = ((100.0f64.powi(2)) - 1.0).sqrt();
-    let alpha = (2.0 - q) / 2.0;
-    let theta = 1.0;
-    let t_esc = 1.0;
-    let tau = d_cof * t;
+    let a: f64 = 1.0;
+    let x0: f64 = ((100.0f64.powi(2)) - 1.0).sqrt();
+    let alpha: f64 = (2.0 - q) / 2.0;
+    let theta: f64 = 1.0;
+    let t_esc: f64 = 1.0;
+    let tau: f64 = d_cof * t;
     let x = g.mapv(|g_i| (g_i.powi(2) - 1.0).sqrt());
 
     let gfa = (1.0 / alpha.abs()) * (1.0 / (2.0 * tau));
