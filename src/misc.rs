@@ -94,6 +94,8 @@ pub fn poly(cof: &[f64], n: usize, x: f64) -> f64 {
     res
 }
 
+
+
 pub fn polint(xa: &[f64], ya: &[f64], x: f64) -> Result<(f64, f64), &'static str> {
     if xa.len() != ya.len() {
         return Err("polint: xa and ya have different sizes");
@@ -506,13 +508,7 @@ pub fn i1qq() -> [f64; 6] {
     ]
 }
 
-pub fn poly(cof: &[f64], n: usize, x: f64) -> f64 {
-    let mut res = cof[n];
-    for i in (0..n).rev() {
-        res = res * x + cof[i];
-    }
-    res
-}
+
 
 
 pub fn bessel_i0(x: f64) -> f64 {
@@ -564,7 +560,7 @@ pub fn bessel_in(n: f64, x: f64) -> f64 {
         let mut bi = 1.0;
         let mut bim;
 
-        for i in (0..=2.0 * (n * (ACC * n).sqrt()) as i32).rev() {
+        for i in (0..=2 * (n * (ACC * n).sqrt()) as i32).rev() {
             bim = bip + i as f64 * tox * bi;
             bip = bi;
             bi = bim;

@@ -19,31 +19,31 @@ impl SpecialF {
     }
 
     // K1 initialization
-    pub fn k1_init(&mut self) {
-        self.xmin = -6.907755278982137;
-        self.xmax = 4.605170185988092;
-        self.oxxm = 1.0 / (self.xmax - self.xmin);
-        self.mxxm = -self.xmin - self.xmax;
-        self.ftab = [
-            // Fill in the array as in the Fortran code for K1
-        ];
-    }
+//    pub fn k1_init(&mut self) {
+//        self.xmin = -6.907755278982137;
+//        self.xmax = 4.605170185988092;
+//       self.oxxm = 1.0 / (self.xmax - self.xmin);
+//        self.mxxm = -self.xmin - self.xmax;
+//        self.ftab = [
+//            // Fill in the array as in the Fortran code for K1
+//        ];
+//    }
 
     // K1 function
-    pub fn k1_func(&self, x: f64) -> f64 {
+//    pub fn k1_func(&self, x: f64) -> f64 {
         // Function implementation
-    }
+//    }
 
     // K2 initialization
-    pub fn k2_init(&mut self) {
-        self.xmin = -8.0;
-        self.xmax = 5.0;
-        self.oxxm = 1.0 / (self.xmax - self.xmin);
-        self.mxxm = -self.xmin - self.xmax;
-        self.ftab = [
-            // Fill in the array as in the Fortran code for K2
-        ];
-    }
+//    pub fn k2_init(&mut self) {
+//        self.xmin = -8.0;
+//        self.xmax = 5.0;
+//        self.oxxm = 1.0 / (self.xmax - self.xmin);
+//        self.mxxm = -self.xmin - self.xmax;
+//        self.ftab = [
+//            // Fill in the array as in the Fortran code for K2
+//        ];
+//    }
 
     // K2 function
     pub fn k2_func(&self, x: f64) -> f64 {

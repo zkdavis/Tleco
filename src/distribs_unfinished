@@ -1,0 +1,229 @@
+
+// Translating RMaxwell_s
+pub fn rmaxwell_s(g: f64, th: f64) -> f64 {
+
+    k2_init();
+    let rm = f64::max(1e-200, g.powi(2) * bofg_s(g) * E.powf(-g / th) / (th * E.powf(k2_func(-th.log(E)))));
+    rm
+}
+
+// Translating RMaxwell_v
+pub fn rmaxwell_v(g: &Array1<f64>, th: f64) -> Array1<f64> {
+    k2_init();
+    g.mapv(|g_i| f64::max(1e-200, g_i.powi(2) * bofg_s(g_i) * (-g_i / th).exp() / (th * (-th.log(E)).exp())))
+}
+
+// Translating powerlaw_s
+pub fn powerlaw_s(g: f64, s: f64) -> f64 {
+    g.powf(-s)
+}
+
+// Translating powerlaw_v
+pub fn powerlaw_v(g: &Array1<f64>, s: f64) -> Array1<f64> {
+    g.mapv(|g_i| g_i.powf(-s))
+}
+
+// Translating powlaw_dis_s
+pub fn powlaw_dis_s(g: f64, g1: f64, g2: f64, s: f64) -> f64 {
+    if g >= g1 && g <= g2 {
+        g.powf(-s)
+    } else {
+        0.0
+    }
+}
+
+// Translating powlaw_dis_v
+pub fn powlaw_dis_v(g: &Array1<f64>, g1: f64, g2: f64, s: f64, norm: Option<bool>) -> Array1<f64> {
+    let mut pwl = Array1::zeros(g.len());
+    let mut norm_dbl = 0.0;
+
+    for (k, &gk) in g.iter().enumerate() {
+        pwl[k] = if gk >= g1 && gk <= g2 { gk.powf(-s) } else { 0.0 };
+        norm_dbl += if k > 0 {
+            pwl[k] * (g[k] - g[k - 1])
+        } else if g.len() > 1 {
+            // Ensuring there's a next element to avoid out-of-bounds access
+            pwl[k] * (g[k + 1] - gk)
+        } else {
+            0.0 // Fallback to 0 if there's only one element
+        };
+    }
+
+    if norm == Some(true) {
+        let norm2_dbl = qromb_w2arg(|x, y, z| powerlaw_v(g.view(), z)[0], g1, g2, s); // Simplified usage
+        pwl = pwl.mapv(|x| norm2_dbl * x / norm_dbl);
+    }
+
+    pwl
+}
+
+pub fn injection_pwl(t: f64, dtinj: f64, g: &[f64], g1: f64, g2: f64, qind: f64, q0: f64) -> Vec<f64> {
+    if t <= dtinj {
+        g.iter().map(|&gi| q0 * powlaw_dis(gi, g1, g2, qind)).collect()
+    } else {
+        vec![0.0; g.len()]
+    }
+}
+
+pub fn injection_hyb(t: f64, dtinj: f64, g: &[f64], g1: f64, g2: f64, qind: f64, th: f64, qth: f64, qnth: f64) -> Vec<f64> {
+    if t <= dtinj {
+        g.iter().enumerate().map(|(k, &gi)| {
+            if qth < 1e-100 {
+                qnth * powlaw_dis(gi, g1, g2, qind)
+            } else if qnth < 1e-100 {
+                qth * rmaxwell(gi, th)
+            } else if gi >= g1 && gi <= g2 {
+                qnth * powlaw_dis(gi, g1, g2, qind) + qth * rmaxwell(gi, th)
+            } else {
+                qth * rmaxwell(gi, th)
+            }
+        }).collect()
+    } else {
+        vec![0.0; g.len()]
+    }
+}
+
+pub fn pwl_norm(norm: f64, index: f64, e1: f64, e2: f64) -> f64 {
+    let eps = 1e-6;
+    let integ = e1.powf(1.0 - index) * p_integ(e2 / e1, index, eps); // Assuming Pinteg function
+    1.0 / (norm * integ)
+}
+
+
+pub fn fp_findif_difu(dt_in: f64, g: &Array1<f64>, nin: &Array1<f64>, gdot_in: &Array1<f64>,
+              din: &Array1<f64>, qin: &Array1<f64>, tesc_in: f64, tlc: f64,
+              check_params: bool) -> Array1<f64> {
+    let ng = g.len();
+    let mut nout = Array1::<f64>::zeros(ng);
+
+    let check_params2 = check_params.unwrap_or(true);
+
+    if check_params2 {
+        let mut check_count = 0;
+
+        // Check scalar values for NaN
+        if dt_in.is_nan() { check_count += 1; }
+        if tesc_in.is_nan() { check_count += 1; }
+        if tlc.is_nan() { check_count += 1; }
+
+        // Check vectors for NaN
+        check_count += g.iter().filter(|&&val| val.is_nan()).count();
+        check_count += nin.iter().filter(|&&val| val.is_nan()).count();
+        check_count += gdot_in.iter().filter(|&&val| val.is_nan()).count();
+        check_count += din.iter().filter(|&&val| val.is_nan()).count();
+        check_count += qin.iter().filter(|&&val| val.is_nan()).count();
+
+        if check_count > 0 {
+            panic!("FP_FinDif_difu: at least one input parameter is not correctly defined");
+        }
+    }
+
+    let dt = dt_in / tlc;
+    let tesc = if tesc_in < 1e100 && tesc_in > 1e-100 { tesc_in / tlc } else { tesc_in };
+    let gdot = gdot_in.mapv(|x| x * tlc);
+    let dd = din.mapv(|x| x * tlc);
+    let qq = qin.mapv(|x| x * tlc);
+
+    let dxp2 = &g.slice(s![1..]) - &g.slice(s![..-1]);
+    let dxm2 = Array1::from_iter(dxp2.iter().skip(1).chain(std::iter::once(dxp2.last().unwrap())));
+    let dx = (&dxp2 + &dxm2) * 0.5;
+
+    let cc_p2 = (&dd.slice(s![1..]) + &dd.slice(s![..-1])) * 0.25;
+    let cc_m2 = cc_p2.clone();
+    let bb_p2 = (&dd.slice(s![1..]) - &dd.slice(s![..-1])) / &dx + (&gdot.slice(s![1..]) + &gdot.slice(s![..-1])) * 0.5;
+    let bb_m2 = bb_p2.clone();
+
+    let ww_p2 = &bb_p2 / &cc_p2;
+    let ww_m2 = &bb_m2 / &cc_m2;
+
+    let zz_p2 = ww_p2.map(|&w| if w * 0.5 > 200.0 { 200.0 } else if w * 0.5 < -200.0 { -200.0 } else { w * 0.5 });
+    let zz_m2 = ww_m2.map(|&w| if w * 0.5 > 200.0 { 200.0 } else if w * 0.5 < -200.0 { -200.0 } else { w * 0.5 });
+
+    let yy_p2 = zz_p2.map(|&z| if z.abs() < 0.1 { 1.0 - z.powi(2) / 24.0 + 7.0 * z.powi(4) / 5760.0 - 31.0 * z.powi(6) / 967680.0 } else { z.abs() * (-z.abs()).exp() / (1.0 - (-2.0 * z.abs()).exp()) });
+    let yy_m2 = zz_m2.map(|&z| if z.abs() < 0.1 { 1.0 - z.powi(2) / 24.0 + 7.0 * z.powi(4) / 5760.0 - 31.0 * z.powi(6) / 967680.0 } else { z.abs() / (z.abs().exp() - (-z.abs()).exp()) });
+
+    let r = nin + dt * &qq;
+    let a = -dt * &cc_m2 * &yy_m2 * (-&zz_m2).mapv(f64::exp) / (&dx * &dxm2);
+    let b = 1.0 + dt * (&cc_p2 * &yy_p2 * (-&zz_p2).mapv(f64::exp) / &dxp2 + &cc_m2 * &yy_m2 * &zz_m2.mapv(f64::exp) / &dxm2) / &dx + dt / tesc;
+    let c = -dt * &cc_p2 * &yy_p2 * &zz_p2.mapv(f64::exp) / (&dx * &dxp2);
+
+    tridag_ser(a.view(), b.view(), c.view(), r)
+}
+
+
+pub fn fp_findif_cool(dt: f64, g: &Array1<f64>, nin: &Array1<f64>, gdot: &Array1<f64>, qq: &Array1<f64>, tesc: f64) -> Array1<f64> {
+    let ng = g.len();
+    let mut nout = Array1::<f64>::zeros(ng);
+
+    // Calculate differences between adjacent elements
+    let mut dxp2 = Array1::<f64>::zeros(ng);
+    let mut dxm2 = Array1::<f64>::zeros(ng);
+    Zip::from(dxp2.slice_mut(s![..ng-1]))
+        .and(g.slice(s![1..]))
+        .and(g.slice(s![..ng-1]))
+        .apply(|dxp2, &g_next, &g_curr| *dxp2 = g_next - g_curr);
+    dxp2[ng-1] = dxp2[ng-2]; // Replicate last element for dxp2
+    dxm2.slice_mut(s![1..]).assign(&dxp2.slice(s![..ng-1])); // Shift dxp2 for dxm2
+    dxm2[0] = dxm2[1]; // Replicate first element for dxm2
+    let dx = (&dxp2 * &dxm2).mapv(f64::sqrt);
+
+    // Calculate BBp2 and BBm2
+    let bbp2 = &gdot.slice(s![1..]) + &gdot.slice(s![..ng-1]);
+    let bbp2 = -0.5 * &bbp2;
+    let bbm2 = bbp2.clone();
+
+    // Prepare the tridiagonal system
+    let r = nin + dt * qq;
+    let a = Array1::<f64>::zeros(ng); // Note: This was originally zeros1D(Ng, .true.), which sets all to true/1.0; adjusted to zeros here.
+    let c = -dt * &bbp2 / &dx;
+    let mut b = Array1::<f64>::ones(ng) + dt * &bbm2 / &dx + dt / tesc;
+
+    // Adjust for the tridiagonal solver's requirements
+    b.slice_mut(s![1..]).assign(&b.slice(s![1..])); // Adjust `b` as per your tridiagonal solver's needs
+
+    // Solve the tridiagonal system
+    nout = tridag_ser(&a.slice(s![1..]), &b, &c.slice(s![..ng-1]), &r);
+
+    nout
+}
+
+
+
+pub fn adiab_cooling(
+    gg: &[f64],
+    cool_type: i32,
+    volume1: Option<f64>,
+    volume2: Option<f64>,
+    gbulk: Option<f64>,
+    bbulk: Option<f64>,
+    r: Option<f64>,
+    dt: Option<f64>,
+) -> Result<Vec<f64>, CoolingError> {
+    match cool_type {
+        0 => Ok(vec![0.0; gg.len()]), // No adiabatic cooling
+        1 => {
+            // Volume evolution
+            let volume1 = volume1.ok_or(CoolingError::MissingArguments("volume1"))?;
+            let volume2 = volume2.ok_or(CoolingError::MissingArguments("volume2"))?;
+            let dt = dt.ok_or(CoolingError::MissingArguments("dt"))?;
+
+            Ok(pofg(gg).iter().map(|&g| g * ((volume2 / volume1).ln() / (3.0 * dt))).collect())
+        },
+        2 => {
+            // Following MSB00
+            let bbulk = bbulk.ok_or(CoolingError::MissingArguments("Bbulk"))?;
+            let gbulk = gbulk.ok_or(CoolingError::MissingArguments("Gbulk"))?;
+            let r = r.ok_or(CoolingError::MissingArguments("R"))?;
+
+            Ok(gg.iter().map(|&g| CLIGHT * bbulk * gbulk * g / r).collect())
+        },
+        3 => {
+            // See Hao et al. (2020)
+            let gbulk = gbulk.ok_or(CoolingError::MissingArguments("Gbulk"))?;
+            let r = r.ok_or(CoolingError::MissingArguments("R"))?;
+
+            Ok(pofg(gg).iter().map(|&g| 1.6 * CLIGHT * bbulk.unwrap_or(0.0) * gbulk * g / r.unwrap_or(0.0)).collect())
+        },
+        _ => Err(CoolingError::InvalidCoolType),
+    }
+}

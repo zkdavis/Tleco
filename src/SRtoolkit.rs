@@ -2,7 +2,8 @@
 
 pub mod srtoolkit {
     // Assuming constants like cLight are defined in a constants module
-    use crate::constants::constants::*;
+    use crate::constants::*;
+    use ndarray::Array1;
 
     // bofg_s: Scalar version
     pub fn bofg_s(g: f64) -> f64 {
@@ -25,6 +26,7 @@ pub mod srtoolkit {
             })
             .collect()
     }
+
 
     // gofb_s: Scalar version
     pub fn gofb_s(b: f64) -> f64 {
