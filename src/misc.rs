@@ -183,7 +183,6 @@ pub fn tridag_ser(a: &Array1<f64>, b: &Array1<f64>, c: &Array1<f64>, r: &Array1<
     let n = b.len();
     let mut u = vec![0.0; n];
     let mut gam = vec![0.0; n];
-
     let mut bet = b[0];
     if bet == 0.0 {
         panic!("tridag_ser: error at code stage 1");
@@ -204,6 +203,7 @@ pub fn tridag_ser(a: &Array1<f64>, b: &Array1<f64>, c: &Array1<f64>, r: &Array1<
     }
 
     u.into()
+
 }
 
 

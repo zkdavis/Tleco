@@ -91,11 +91,22 @@ pub fn fp_findif_difu(dt_in: f64, g: &Array1<f64>, nin: &Array1<f64>, gdot_in: &
     let dd = din.mapv(|x| x * tlc);
     let qq = qin.mapv(|x| x * tlc);
 
-    let dxp2 = &g.slice(s![1..]) - &g.slice(s![..-1]);
-    let dxm2 = Array1::from_iter(dxp2.iter().skip(1).chain(std::iter::once(dxp2.last().unwrap())));
-    let dx = (&dxp2 + &dxm2) * 0.5;
+    let mut dxp2 = Array1::<f64>::zeros(ng);
+    let mut dxm2 = Array1::<f64>::zeros(ng);
+    let mut cc_p2 = Array1::<f64>::zeros(ng);
+    let mut cc_m2 = Array1::<f64>::zeros(ng);
+    let mut bb_p2 = Array1::<f64>::zeros(ng);
+    let mut bb_m2 = Array1::<f64>::zeros(ng);
 
+    dxp2.slice_mut(s![..ng-1]).assign( &(&g.slice(s![1..]) - &g.slice(s![..ng-1])));
+    dxp2[[ng-1]]= dxp2[[ng - 2]];
+    dxm2.slice_mut(s![1..]).assign(&dxp2.slice(s![..(ng-1)]));
+    dxm2[[0]]= dxm2[[1]];
+    let dx = (&dxp2 + &dxm2) * 0.5;
+    println!("made it {}",dd.slice(s![..-1]).len().to_string());
     let cc_p2 = (&dd.slice(s![1..]) + &dd.slice(s![..-1])) * 0.25;
+    println!("made it {}",dxm2.slice_mut(s![1..]).len().to_string());
+    println!("made it {}",dxp2.slice(s![..(ng-1)]).len().to_string());
     let cc_m2 = cc_p2.clone();
     let bb_p2 = (&dd.slice(s![1..]) - &dd.slice(s![..-1])) / &dx + (&gdot.slice(s![1..]) + &gdot.slice(s![..-1])) * 0.5;
     let bb_m2 = bb_p2.clone();
@@ -113,7 +124,10 @@ pub fn fp_findif_difu(dt_in: f64, g: &Array1<f64>, nin: &Array1<f64>, gdot_in: &
     let a = -dt * &cc_m2 * &yy_m2 * (-&zz_m2).mapv(f64::exp) / (&dx * &dxm2);
     let b = 1.0 + dt * (&cc_p2 * &yy_p2 * (-&zz_p2).mapv(f64::exp) / &dxp2 + &cc_m2 * &yy_m2 * &zz_m2.mapv(f64::exp) / &dxm2) / &dx + dt / tesc;
     let c = -dt * &cc_p2 * &yy_p2 * &zz_p2.mapv(f64::exp) / (&dx * &dxp2);
-
+    println!("{}",r.len().to_string());
+    println!("{}",a.len().to_string());
+    println!("{}",b.len().to_string());
+    println!("{}",c.len().to_string());
     tridag_ser(&a, &b, &c, &r)
 }
 
