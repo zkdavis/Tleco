@@ -10,7 +10,7 @@ me = 9.1093897e-28
 sigmaT = 6.6524e-25
 ###constants
 numt = 200
-numg = 80
+numg = 200
 numf = 80
 fmax = 1e28
 fmin =1e8
@@ -24,7 +24,7 @@ R = 1e14 # size of blob
 sigma = 1e-6 #blobs magnetization
 B=0.1 #blobs magnetic field
 n0 = (B**2)/(np.pi*4*sigma*mp*(cLight**2))#particle density
-t_esc = R/cLight #escape time
+t_esc = 1e200#R/cLight #escape time
 t_inj = R/cLight #injection time
 tlc = R/cLight #light crossing time
 p1 = -2.5 #pwl indices
@@ -72,8 +72,9 @@ def broken_pwl(n0,g,p1,p2,gmin_cut,g2_cut):
     return f
 
 ##define fp terms
-Qinj = broken_pwl(n0,g,p1,p2,gcut,g2cut)/t_inj
-gdot[0,:] = (4/3)*sigmaT*cLight*((B**2)/(8*np.pi))*(g**2)/(me*(cLight**2))
+# Qinj = broken_pwl(n0,g,p1,p2,gcut,g2cut)/t_inj
+gdot[0,:] = 1e2*(4/3)*sigmaT*cLight*((B**2)/(8*np.pi))*(g**2)/(me*(cLight**2))
+# D = 0.5*gdot[0,:]
 n[0,:] = broken_pwl(n0,g,p1,p2,gcut,g2cut)
 ###time loop
 for i in range(1,len(t)):
@@ -86,8 +87,7 @@ for i in range(1,len(t)):
     # j_ssc[i,:] = para.radiation.ic_iso_powlaw_full(f,I_s[i,:],g,n[i,:])
     # I_ssc[i, :] = para.radiation.radtrans_blob(j_ssc[i, :], R, ambs[i, :])
     # dotgKN = para.radiation.rad_cool_pwl(g, f, 4 * np.pi * I_s[i, :]  / cLight, cool_withKN)
-    gdot[i,:] = (1e200)*gdot[0,:] #+ dotgKN
-    print(np.argmax(r))
+    gdot[i,:] = 2*gdot[0,:] #+ dotgKN
 
 pc.plot_n(g,n,t)
 # pc.plot_j(f,f*(j_s+j_ssc),t)
