@@ -86,7 +86,8 @@ for i in range(1,len(t)):
     # j_ssc[i,:] = para.radiation.ic_iso_powlaw_full(f,I_s[i,:],g,n[i,:])
     # I_ssc[i, :] = para.radiation.radtrans_blob(j_ssc[i, :], R, ambs[i, :])
     # dotgKN = para.radiation.rad_cool_pwl(g, f, 4 * np.pi * I_s[i, :]  / cLight, cool_withKN)
-    gdot[i,:] = gdot[0,:] #+ dotgKN
+    gdot[i,:] = (1e200)*gdot[0,:] #+ dotgKN
+    print(np.argmax(r))
 
 pc.plot_n(g,n,t)
 # pc.plot_j(f,f*(j_s+j_ssc),t)

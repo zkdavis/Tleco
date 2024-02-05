@@ -103,13 +103,16 @@ pub fn fp_findif_difu(dt_in: f64, g: &Array1<f64>, nin: &Array1<f64>, gdot_in: &
     dxm2.slice_mut(s![1..]).assign(&dxp2.slice(s![..(ng-1)]));
     dxm2[[0]]= dxm2[[1]];
     let dx = (&dxp2 + &dxm2) * 0.5;
-    println!("made it {}",dd.slice(s![..-1]).len().to_string());
-    let cc_p2 = (&dd.slice(s![1..]) + &dd.slice(s![..-1])) * 0.25;
-    println!("made it {}",dxm2.slice_mut(s![1..]).len().to_string());
-    println!("made it {}",dxp2.slice(s![..(ng-1)]).len().to_string());
-    let cc_m2 = cc_p2.clone();
-    let bb_p2 = (&dd.slice(s![1..]) - &dd.slice(s![..-1])) / &dx + (&gdot.slice(s![1..]) + &gdot.slice(s![..-1])) * 0.5;
-    let bb_m2 = bb_p2.clone();
+
+    cc_p2.slice_mut(s![..ng-1]).assign( &((&dd.slice(s![1..]) - &dd.slice(s![..ng-1]))* 0.25));
+    cc_p2[[ng-1]]= 0.25*dd[[ng - 1]];
+    cc_m2.slice_mut(s![1..]).assign(&cc_p2.slice(s![..(ng-1)]));
+    cc_m2[[0]]= 0.25*dd[[0]];
+    bb_p2.slice_mut(s![..ng-1]).assign( &(((&dd.slice(s![1..]) - &dd.slice(s![..ng-1])) / &dxp2.slice(s![..ng-1]) + (&gdot.slice(s![1..]) + &gdot.slice(s![..ng-1]))) * 0.5));
+    bb_p2[[ng-1]]=  0.5 * ((dd[[ng - 1]] - dd[[ng - 2]]) / dxp2[[ng - 1]] + (gdot[[ng - 1]] + gdot[[ng - 2]])) ;
+    bb_m2.slice_mut(s![1..]).assign( &(((&dd.slice(s![1..]) - &dd.slice(s![..ng-1])) / &dxm2.slice(s![1..]) + (&gdot.slice(s![1..]) + &gdot.slice(s![..ng-1]))) * 0.5));
+    bb_m2[[0]] = polint(&g.slice(s![1..]).as_slice().unwrap(),  &bb_m2.slice(s![1..]).as_slice().unwrap(), g[[0]]).map(|(val, _)| val).unwrap();
+
 
     let ww_p2 = &bb_p2 / &cc_p2;
     let ww_m2 = &bb_m2 / &cc_m2;
@@ -124,10 +127,7 @@ pub fn fp_findif_difu(dt_in: f64, g: &Array1<f64>, nin: &Array1<f64>, gdot_in: &
     let a = -dt * &cc_m2 * &yy_m2 * (-&zz_m2).mapv(f64::exp) / (&dx * &dxm2);
     let b = 1.0 + dt * (&cc_p2 * &yy_p2 * (-&zz_p2).mapv(f64::exp) / &dxp2 + &cc_m2 * &yy_m2 * &zz_m2.mapv(f64::exp) / &dxm2) / &dx + dt / tesc;
     let c = -dt * &cc_p2 * &yy_p2 * &zz_p2.mapv(f64::exp) / (&dx * &dxp2);
-    println!("{}",r.len().to_string());
-    println!("{}",a.len().to_string());
-    println!("{}",b.len().to_string());
-    println!("{}",c.len().to_string());
+
     tridag_ser(&a, &b, &c, &r)
 }
 
