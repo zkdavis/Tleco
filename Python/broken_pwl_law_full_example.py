@@ -4,7 +4,7 @@ import plots_code as pc
 
 ##Example injectecting a broken power law into a blob that is cooled by synchrotron and ssc
 
-cLight = 3e10
+cLight = 2.99792458e10
 mp = 1.67262e-24
 me = 9.1093897e-28
 sigmaT = 6.6524e-25
@@ -73,7 +73,7 @@ def broken_pwl(n0,g,p1,p2,gmin_cut,g2_cut):
 
 ##define fp terms
 # Qinj = broken_pwl(n0,g,p1,p2,gcut,g2cut)/t_inj
-gdot[0,:] = 1e2*(4/3)*sigmaT*cLight*((B**2)/(8*np.pi))*(g**2)/(me*(cLight**2))
+gdot[0,:] = 1e5*(4/3)*sigmaT*cLight*((B**2)/(8*np.pi))*(g**2)/(me*(cLight**2))
 # D = 0.5*gdot[0,:]
 n[0,:] = broken_pwl(n0,g,p1,p2,gcut,g2cut)
 ###time loop
@@ -87,7 +87,7 @@ for i in range(1,len(t)):
     # j_ssc[i,:] = para.radiation.ic_iso_powlaw_full(f,I_s[i,:],g,n[i,:])
     # I_ssc[i, :] = para.radiation.radtrans_blob(j_ssc[i, :], R, ambs[i, :])
     # dotgKN = para.radiation.rad_cool_pwl(g, f, 4 * np.pi * I_s[i, :]  / cLight, cool_withKN)
-    gdot[i,:] = 2*gdot[0,:] #+ dotgKN
+    gdot[i,:] = gdot[0,:] #+ dotgKN
 
 pc.plot_n(g,n,t)
 # pc.plot_j(f,f*(j_s+j_ssc),t)

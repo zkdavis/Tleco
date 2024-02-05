@@ -19,7 +19,7 @@ def plot_n(g,n,t):
     my = None
 
     for i in range(len(t)):
-        if(i%45 !=0 and i != len(t) - 1 ):
+        if(i%40 !=0 and i != len(t) - 1 ):
             continue
         y = n[i,:]
         if(my == None):

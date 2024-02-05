@@ -79,7 +79,6 @@ pub fn fp_findif_difu(dt_in: f64, g: &Array1<f64>, nin: &Array1<f64>, gdot_in: &
         check_count += gdot_in.iter().filter(|&&val| val.is_nan()).count();
         check_count += din.iter().filter(|&&val| val.is_nan()).count();
         check_count += qin.iter().filter(|&&val| val.is_nan()).count();
-        println!("check count: {}",check_count.to_string());
         if check_count > 0 {
             panic!("FP_FinDif_difu: at least one input parameter is not correctly defined");
         }
@@ -102,24 +101,24 @@ pub fn fp_findif_difu(dt_in: f64, g: &Array1<f64>, nin: &Array1<f64>, gdot_in: &
     let mut bb_m2 = Array1::<f64>::zeros(ng);
 
     dxp2.slice_mut(s![..ng-1]).assign( &(&g.slice(s![1..]) - &g.slice(s![..ng-1])));
-    dxp2[[ng-1]]= dxp2[[ng - 2]];
+    dxp2[ng-1]= dxp2[ng - 2];
     dxm2.slice_mut(s![1..]).assign(&dxp2.slice(s![..(ng-1)]));
-    dxm2[[0]]= dxm2[[1]];
+    dxm2[0]= dxm2[1];
     let dx = (&dxp2 + &dxm2) * 0.5;
 
-    cc_p2.slice_mut(s![..ng-1]).assign( &((&dd.slice(s![1..]) - &dd.slice(s![..ng-1]))* 0.25));
-    cc_p2[[ng-1]]= 0.25*dd[[ng - 1]];
+    cc_p2.slice_mut(s![..ng-1]).assign( &((&dd.slice(s![1..]) + &dd.slice(s![..ng-1]))* 0.25));
+    cc_p2[ng-1]= 0.25*dd[ng - 1];
     cc_m2.slice_mut(s![1..]).assign(&cc_p2.slice(s![..(ng-1)]));
-    cc_m2[[0]]= 0.25*dd[[0]];
+    cc_m2[0]= 0.25*dd[0];
     bb_p2.slice_mut(s![..ng-1]).assign( &(((&dd.slice(s![1..]) - &dd.slice(s![..ng-1])) / &dxp2.slice(s![..ng-1]) + (&gdot.slice(s![1..]) + &gdot.slice(s![..ng-1]))) * 0.5));
-    bb_p2[[ng-1]]=  0.5 * ((dd[[ng - 1]] - dd[[ng - 2]]) / dxp2[[ng - 1]] + (gdot[[ng - 1]] + gdot[[ng - 2]])) ;
+    bb_p2[ng-1]=  0.5 * ((dd[ng - 1] - dd[ng - 2]) / dxp2[ng - 1] + (gdot[ng - 1] + gdot[ng - 2])) ;
     bb_m2.slice_mut(s![1..]).assign( &(((&dd.slice(s![1..]) - &dd.slice(s![..ng-1])) / &dxm2.slice(s![1..]) + (&gdot.slice(s![1..]) + &gdot.slice(s![..ng-1]))) * 0.5));
-    bb_m2[[0]] = polint(&g.slice(s![1..]).as_slice().unwrap(),  &bb_m2.slice(s![1..]).as_slice().unwrap(), g[[0]]).map(|(val, _)| val).unwrap();
+    bb_m2[0] = polint(&g.slice(s![1..]).as_slice().unwrap(),  &bb_m2.slice(s![1..]).as_slice().unwrap(), g[0]).map(|(val, _)| val).unwrap();
 
 
 
-    let ww_p2 = &bb_p2 / &cc_p2;
-    let ww_m2 = &bb_m2 / &cc_m2;
+    let ww_p2 = &dxp2*&bb_p2 / &cc_p2;
+    let ww_m2 = &dxm2*&bb_m2 / &cc_m2;
 
     let mut zz_p2 = Array1::<f64>::zeros(ng);
     let mut zz_m2 = Array1::<f64>::zeros(ng);
@@ -167,8 +166,7 @@ pub fn fp_findif_difu(dt_in: f64, g: &Array1<f64>, nin: &Array1<f64>, gdot_in: &
     let b = 1.0 + dt * (&cc_p2 * &yy_p2 * (-&zz_p2).mapv(f64::exp) / &dxp2 + &cc_m2 * &yy_m2 * &zz_m2.mapv(f64::exp) / &dxm2) / &dx + dt / tesc;
     let c = -dt * &cc_p2 * &yy_p2 * &zz_p2.mapv(f64::exp) / (&dx * &dxp2);
 
-    println!("ain: {}", (&yy_m2).to_string());
-    println!("ain: {}", ((-&zz_m2).mapv(f64::exp)).to_string());
+
 
 
 
