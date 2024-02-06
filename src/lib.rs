@@ -9,6 +9,7 @@ mod SRtoolkit;
 mod distribs;
 mod misc;
 mod specialf;
+mod radiation;
 
 /// Example retrieving constant from constants file can be improved by using macros
 #[pyfunction]
@@ -51,6 +52,18 @@ fn fp_findif_difu(dt_in: f64, g: Vec<f64>, nin: Vec<f64>, gdot_in: Vec<f64>,
     let result = distribs::fp_findif_difu(dt_in, &g_array,&nin_array,&gdot_in_array,&din_array,&qin_array,tesc_in,tlc,check_params);
     Ok(result.to_vec())
     }
+
+
+// #[pyfunction]
+// fn syn_emissivity_full(freqs: Vec<f64>, g: Vec<f64>, n: Vec<f64>, b: f64, with_abs: bool) -> PyResult<(Vec<f64>, Vec<f64>)> {
+//     let freqs_arr = Array1::from(freqs);
+//     let g_arr = Array1::from(g);
+//     let n_arr = Array1::from(n);
+//
+//     let (jmbs, ambs) = syn_emissivity_full(&freqs_arr, &g_arr, &n_arr, b, with_abs);
+//
+//     Ok((jmbs.to_vec(), ambs.to_vec()))
+// }
 
 
 /// A Python module implemented in Rust.

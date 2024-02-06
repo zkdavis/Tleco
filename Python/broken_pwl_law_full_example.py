@@ -79,10 +79,8 @@ n[0,:] = broken_pwl(n0,g,p1,p2,gcut,g2cut)
 ###time loop
 for i in range(1,len(t)):
     dt = t[i] - t[i-1]
-    nin = n[i-1,:]
-    r = para.fp_findif_difu(dt, g, n[i-1,:], gdot[i-1,:], D, Qinj, t_esc, tlc)
-    n[i,:] = r
-    # j_s[i,:],ambs[i,:] = para.radiation.syn_emissivity_full(f,g,n[i,:],B,with_abs) #,sync and absorb
+    n[i,:] = para.fp_findif_difu(dt, g, n[i-1,:], gdot[i-1,:], D, Qinj, t_esc, tlc)
+    # j_s[i,:],ambs[i,:] = para.syn_emissivity_full(f,g,n[i,:],B,with_abs) #,sync and absorb
     # I_s[i,:] = para.radiation.radtrans_blob(j_s[i,:],R,ambs[i,:])
     # j_ssc[i,:] = para.radiation.ic_iso_powlaw_full(f,I_s[i,:],g,n[i,:])
     # I_ssc[i, :] = para.radiation.radtrans_blob(j_ssc[i, :], R, ambs[i, :])
