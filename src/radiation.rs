@@ -1,14 +1,11 @@
-use ndarray::{Array, Array1};
+use ndarray::{Array, Axis, Array1};
 use ndarray::parallel::prelude::*;
 
 use crate::constants::*;
 use crate::misc::*;
 
 
-pub fn syn_emissivity<F>(freq: f64, gg: &Array1<f64>, nn: &Array1<f64>, b: f64,  rma_func: Option<F>) -> f64
-where
-    F: Fn(f64, f64) -> f64,
-{
+pub fn syn_emissivity(freq: f64, gg: &Array1<f64>, nn: &Array1<f64>, b: f64,  rma_func: Option<fn(f64, f64) -> f64>) -> f64 {
     let ng = gg.len();
     let mut jnu = 0f64;
 
@@ -36,13 +33,23 @@ pub fn syn_emissivity_full(freqs: &Array1<f64>,g: &Array1<f64>,n: &Array1<f64>,b
     let mut jmbs = Array1::<f64>::zeros(numdf);
     let mut ambs = Array1::<f64>::zeros(numdf);
 
-    freqs.axis_iter(ndarray::Axis(0)).into_par_iter().enumerate().for_each(|(i, freq)| {
-        let freq = *freq.first().unwrap();
-        jmbs[i] = syn_emissivity(freq, &g, &n, b, Some(rma_new));
+
+    let results: Vec<_> = freqs.axis_iter(Axis(0))
+        .into_par_iter()
+        .map(|freq| {
+            let freq = *freq.first().unwrap();
+            let jmb = syn_emissivity(freq, &g, &n, b, Some(rma_new));
+            let amb = if with_abs { syn_absorption(freq, &g, &n, b, Some(rma_new)) } else { 0.0 };
+            (jmb, amb)
+        })
+        .collect();
+
+    for (i, (jmb, amb)) in results.into_iter().enumerate() {
+        jmbs[i] = jmb;
         if with_abs {
-            ambs[i] = syn_absorption(freq, &g, &n, b, Some(rma_new));
+            ambs[i] = amb;
         }
-    });
+    }
 
     (jmbs, ambs)
 }
@@ -50,10 +57,8 @@ pub fn syn_emissivity_full(freqs: &Array1<f64>,g: &Array1<f64>,n: &Array1<f64>,b
 
 
 
-pub fn j_mb<F>(nu: f64, b: f64, n0: f64, gmin: f64, gmax: f64, qq: f64, rma_func: Option<F>) -> f64
-where
-    F: Fn(f64, f64) -> f64,
-{
+
+pub fn j_mb(nu: f64, b: f64, n0: f64, gmin: f64, gmax: f64, qq: f64, rma_func: Option<fn(f64, f64) -> f64>) -> f64 {
     let nu_b = NUCONST * b;
     let chi = nu / nu_b;
     let i2 = rma_qromb(chi, qq, gmin.ln(), gmax.ln(), rma_func);
@@ -62,10 +67,7 @@ where
     emiss
 }
 
-pub fn rma_qromb<F>(chi: f64, q: f64, lga: f64, lgb: f64,  rma_func: Option<F>) -> f64
-where
-    F: Fn(f64, f64) -> f64,
-{
+pub fn rma_qromb(chi: f64, q: f64, lga: f64, lgb: f64, rma_func: Option<fn(f64, f64) -> f64>) -> f64{
     const JMAX:usize =60;
     const JMAXP:usize =61;
     const K:usize = 10;
@@ -108,12 +110,9 @@ where
 }
 
 
-pub fn rma_trapzd<F>(chi: f64, q: f64, lga: f64, lgb: f64, s: &mut f64, n: usize, rma_func: Option<F>,
-) where
-    F: Fn(f64, f64) -> f64,
-{
+pub fn rma_trapzd(chi: f64, q: f64, lga: f64, lgb: f64, s: &mut f64, n: usize, rma_func: Option<fn(f64, f64) -> f64>){
     //testing but this should work to make the rma function optional
-    let func = rma_func.unwrap_or_else(|c, g| rma_new(c, g));
+    let func = rma_func.unwrap_or_else(|| rma_new);
 
     if n == 1 {
         let ega = lga.exp();
@@ -170,10 +169,7 @@ pub fn rma_new(chi: f64, g: f64) -> f64 {
 }
 
 
-pub fn syn_absorption<F>(freq: f64,  gg: &Array1<f64>, nn: &Array1<f64>, b: f64,rma_func: Option<F>) -> f64
-where
-    F: Fn(f64, f64) -> f64,
-{
+pub fn syn_absorption(freq: f64,  gg: &Array1<f64>, nn: &Array1<f64>, b: f64,rma_func: Option<fn(f64, f64) -> f64>) -> f64 {
     let ng = gg.len();
     let mut anu = 0.0;
 
@@ -196,10 +192,7 @@ where
     anu
 }
 
-pub fn a_mb<F>(nu: f64,b: f64,n0: f64,gmin: f64,gmax: f64,qq: f64, rma_func: Option<F>,
-) where
-    F: Fn(f64, f64) -> f64,
-{
+pub fn a_mb(nu: f64,b: f64,n0: f64,gmin: f64,gmax: f64,qq: f64, rma_func: Option<fn(f64, f64) -> f64>) -> f64{
     let nu_b = NUCONST * b;
     let chi = nu / nu_b;
     let a2 = arma_qromb(chi, qq, gmin.ln(), gmax.ln(), rma_func);
@@ -208,10 +201,7 @@ pub fn a_mb<F>(nu: f64,b: f64,n0: f64,gmin: f64,gmax: f64,qq: f64, rma_func: Opt
     absor
 }
 
-pub fn arma_qromb<F>(chi: f64, q: f64, lga: f64, lgb: f64, rma_func: Option<F>,
-) where
-    F: Fn(f64, f64) -> f64,
-{
+pub fn arma_qromb(chi: f64, q: f64, lga: f64, lgb: f64, rma_func: Option<fn(f64, f64) -> f64>) -> f64 {
     let (JMAX,JMAXP,K,KM,EPS)=(60,61,10,9,1e-5);
     let mut h: Vec<f64> = vec![0.0; JMAX + 1];
     let mut s: Vec<f64> = vec![0.0; JMAX + 1];
@@ -223,9 +213,10 @@ pub fn arma_qromb<F>(chi: f64, q: f64, lga: f64, lgb: f64, rma_func: Option<F>,
     for j in 1..=JMAX {
         arma_trapzd(chi, q, lga, lgb, &mut s[j - 1], j, rma_func);
         if j >= K {
-            polint(&h[j - KM..=j], &s[j - KM..=j], 0.0, &mut qromb, &mut dqromb)?;
+            let pol_r = polint(&h[j - KM..=j], &s[j - KM..=j], 0.0);
+            (qromb,dqromb) = pol_r.unwrap();
             if dqromb.abs() <= EPS * qromb.abs() {
-                return Ok(qromb);
+                return qromb;
             }
         }
         if j < JMAX {
@@ -241,14 +232,13 @@ pub fn arma_qromb<F>(chi: f64, q: f64, lga: f64, lgb: f64, rma_func: Option<F>,
     eprintln!("gb     = {}", lgb.exp());
     eprintln!("qromb  = {}", qromb);
     eprintln!("dqromb = {}", dqromb);
-    panic!("ARMA_qromb: too many steps")
+    eprintln!("ARMA_qromb: too many steps");
+
+    qromb
 }
 
 
-pub fn arma_trapzd<F>(chi: f64,q: f64,lga: f64,lgb: f64,s: &mut f64,n: usize,rma_func: Option<F>,
-) where
-    F: Fn(f64, f64) -> f64,
-{
+pub fn arma_trapzd(chi: f64,q: f64,lga: f64,lgb: f64,s: &mut f64,n: usize, rma_func: Option<fn(f64, f64) -> f64>) {
     let mut del: f64;
     let mut fsum: f64 = 0.0;
     let mut lg: f64;

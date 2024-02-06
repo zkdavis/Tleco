@@ -157,7 +157,7 @@ def plot_j(g,n,t):
 
 
     cmap = cm.rainbow
-    sm = plt.cm.ScalarMappable(cmap=cmap,  norm=matplotlib.colors.LogNorm(vmin=t[0], vmax=t[-1]))
+    sm = plt.cm.ScalarMappable(cmap=cmap, norm=matplotlib.colors.LogNorm(vmin=t[0], vmax=t[-1]))
 
     pls = []
     my = None
@@ -179,7 +179,7 @@ def plot_j(g,n,t):
     cbticks = []
     for i in range(8):
         cbticks.append(r"$10^{{{0}}}$".format(i))
-    cbar = plt.colorbar(sm,anchor=(-0.6,0.0),ticks=np.logspace(0,7,8))
+    cbar = plt.colorbar(sm, ax=ax,anchor=(-0.6,0.0),ticks=np.logspace(0,7,8))
     cbar.ax.set_yticklabels(cbticks)
     cbar.ax.minorticks_off()
     cbar.ax.set_ylabel(r"t [s]",fontsize=18)

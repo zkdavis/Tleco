@@ -10,7 +10,7 @@ me = 9.1093897e-28
 sigmaT = 6.6524e-25
 ###constants
 numt = 200
-numg = 200
+numg = 80
 numf = 80
 fmax = 1e28
 fmin =1e8
@@ -80,7 +80,7 @@ n[0,:] = broken_pwl(n0,g,p1,p2,gcut,g2cut)
 for i in range(1,len(t)):
     dt = t[i] - t[i-1]
     n[i,:] = para.fp_findif_difu(dt, g, n[i-1,:], gdot[i-1,:], D, Qinj, t_esc, tlc)
-    # j_s[i,:],ambs[i,:] = para.syn_emissivity_full(f,g,n[i,:],B,with_abs) #,sync and absorb
+    j_s[i,:],ambs[i,:] = para.syn_emissivity_full(f,g,n[i,:],B,with_abs) #,sync and absorb
     # I_s[i,:] = para.radiation.radtrans_blob(j_s[i,:],R,ambs[i,:])
     # j_ssc[i,:] = para.radiation.ic_iso_powlaw_full(f,I_s[i,:],g,n[i,:])
     # I_ssc[i, :] = para.radiation.radtrans_blob(j_ssc[i, :], R, ambs[i, :])
@@ -88,6 +88,7 @@ for i in range(1,len(t)):
     gdot[i,:] = gdot[0,:] #+ dotgKN
 
 pc.plot_n(g,n,t)
+pc.plot_j(f,f*(j_s),t)
 # pc.plot_j(f,f*(j_s+j_ssc),t)
 # pc.plot_I(f,np.pi * 4* (I_ssc + I_s)*f,t)
 # pc.plot_n(g,gdot[0:1,:],t[0:1])

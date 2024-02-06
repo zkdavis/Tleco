@@ -1,7 +1,7 @@
 use pyo3::prelude::*;
 use pyo3::types::PyList;
 use pyo3::PyAny;
-use ndarray::ArrayView1;
+use ndarray::{Array1, ArrayView1};
 
 /// fortran dependencies
 mod constants;
@@ -54,16 +54,15 @@ fn fp_findif_difu(dt_in: f64, g: Vec<f64>, nin: Vec<f64>, gdot_in: Vec<f64>,
     }
 
 
-// #[pyfunction]
-// fn syn_emissivity_full(freqs: Vec<f64>, g: Vec<f64>, n: Vec<f64>, b: f64, with_abs: bool) -> PyResult<(Vec<f64>, Vec<f64>)> {
-//     let freqs_arr = Array1::from(freqs);
-//     let g_arr = Array1::from(g);
-//     let n_arr = Array1::from(n);
-//
-//     let (jmbs, ambs) = syn_emissivity_full(&freqs_arr, &g_arr, &n_arr, b, with_abs);
-//
-//     Ok((jmbs.to_vec(), ambs.to_vec()))
-// }
+#[pyfunction]
+fn syn_emissivity_full(freqs: Vec<f64>, g: Vec<f64>, n: Vec<f64>, b: f64, with_abs: bool) -> PyResult<(Vec<f64>, Vec<f64>)> {
+    let freqs_arr = Array1::from(freqs);
+    let g_arr = Array1::from(g);
+    let n_arr = Array1::from(n);
+
+    let (jmbs, ambs) = radiation::syn_emissivity_full(&freqs_arr, &g_arr, &n_arr, b, with_abs);
+    Ok((jmbs.to_vec(), ambs.to_vec()))
+}
 
 
 /// A Python module implemented in Rust.
@@ -73,5 +72,6 @@ fn pyparamo(_py: Python, m: &PyModule) -> PyResult<()> {
     m.add_function(wrap_pyfunction!(bofg, m)?)?;
     m.add_function(wrap_pyfunction!(eq_59_park1995, m)?)?;
     m.add_function(wrap_pyfunction!(fp_findif_difu, m)?)?;
+    m.add_function(wrap_pyfunction!(syn_emissivity_full, m)?)?;
     Ok(())
 }
