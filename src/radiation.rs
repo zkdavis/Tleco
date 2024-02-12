@@ -3,6 +3,7 @@ use ndarray::parallel::prelude::*;
 
 use crate::constants::*;
 use crate::misc::*;
+use crate::pwl_integ::*;
 
 
 pub fn syn_emissivity(freq: f64, gg: &Array1<f64>, nn: &Array1<f64>, b: f64,  rma_func: Option<fn(f64, f64) -> f64>) -> f64 {
@@ -269,6 +270,109 @@ pub fn arma_trapzd(chi: f64,q: f64,lga: f64,lgb: f64,s: &mut f64,n: usize, rma_f
     }
 }
 
+
+
+pub fn ic_iso_powlaw(nuout: f64, nu: &Array1<f64>, n: &Array1<f64>, g: &Array1<f64>, inu: &Array1<f64>) -> f64{
+    let ng = g.len();
+    let nf = nu.len();
+    let mut jnu = 0.0;
+
+    for j in 0..nf-1 {
+        if inu[j] > 1e-200 && inu[j + 1] > 1e-200 {
+            let mut l = (-((inu[j + 1] / inu[j]).ln())) / ((nu[j + 1] / nu[j]).ln());
+            l = l.clamp(-8.0, 8.0);
+            let gkn = MASS_E * CLIGHT.powi(2) / (HPLANCK * nu[j + 1]);
+            let f1 = nuout / (4.0 * nu[j]);
+            let f2 = nuout / (4.0 * nu[j + 1]);
+            let g2 = g[ng - 1].min(gkn);
+            let g1 = g[0].max(f1.sqrt());
+
+            if g1 < g2 {
+                for k in 0..ng-1 {
+                    if g[k] < g1 || g[k] > g2 { continue; }
+                    if n[k] > 1e-200 && n[k + 1] > 1e-200 {
+                        let mut q = -((n[k + 1] / n[k]).ln()) / ((g[k + 1] / g[k]).ln());
+                        q = q.clamp(-8.0, 8.0);
+
+                        let s1 = (q - 1.0) / 2.0;
+                        let s2 = (2.0 * l - q - 1.0) / 2.0;
+                        let gmx_star = g[k + 1].min(gkn);
+                        let w1 = f1.min(gmx_star.powi(2));
+                        let w2 = f2.max(0.25);
+
+                        if w1 > w2 {
+                             let emis = if 0.25 < f1 && f1 < g[k].powi(2) {
+                                sscg1iso(gmx_star.powi(-2), g[k].powi(-2), w2, w1, s1, s2)
+                            } else if f1 <= g[k].powi(2) && f2 <= g[k].powi(2) {
+                                sscg1iso(gmx_star.powi(-2), g[k].powi(-2), w2, g[k].powi(2), s1, s2)
+                                + sscg2iso(gmx_star.powi(-2), 1.0, g[k].powi(2), w1, s1, s2)
+                            } else if f2 <= gmx_star.powi(2) && f2 > g[k].powi(2) {
+                                sscg2iso(gmx_star.powi(-2), 1.0, w2, w1, s1, s2)
+                            } else {
+                                0.0
+                            };
+                            println!("{}",emis);
+                            jnu += emis * n[k] * g[k].powf(q) * inu[j] * SIGMAT * f1.powf(-l);
+                        }
+                    }
+                }
+            }
+        }
+    }
+    jnu
+}
+
+/*
+pub fn syn_emissivity_full(freqs: &Array1<f64>,g: &Array1<f64>,n: &Array1<f64>,b: f64,with_abs: bool) -> (Array1<f64>, Array1<f64>) {
+    let numdf = freqs.len();
+    let mut jmbs = Array1::<f64>::zeros(numdf);
+    let mut ambs = Array1::<f64>::zeros(numdf);
+
+
+    let results: Vec<_> = freqs.axis_iter(Axis(0))
+        .into_par_iter()
+        .map(|freq| {
+            let freq = *freq.first().unwrap();
+            let jmb = syn_emissivity(freq, &g, &n, b, Some(rma_new));
+            let amb = if with_abs { syn_absorption(freq, &g, &n, b, Some(rma_new)) } else { 0.0 };
+            (jmb, amb)
+        })
+        .collect();
+
+    for (i, (jmb, amb)) in results.into_iter().enumerate() {
+        jmbs[i] = jmb;
+        if with_abs {
+            ambs[i] = amb;
+        }
+    }
+
+    (jmbs, ambs)
+}
+*/
+
+
+pub fn ic_iso_powlaw_full(freqs: &Array1<f64>, inu: &Array1<f64>, g: &Array1<f64>, n: &Array1<f64>) -> Array1<f64> {
+    let numdf = freqs.len();
+    let mut jic = Array1::<f64>::zeros(numdf);
+
+
+    let results: Vec<_> = freqs.axis_iter(Axis(0))
+        .into_par_iter()
+        .map(|freq| {
+            let freq = *freq.first().unwrap();
+            let j_ic = ic_iso_powlaw( freq, &freqs, &inu, &n, &g);
+            j_ic
+        })
+        .collect();
+
+    //todo get rid of this redundant loop
+    for (i, j_ic) in results.into_iter().enumerate() {
+        jic[i] = j_ic;
+    }
+
+
+    jic
+}
 
 ///////
 /////// radiation transfer
