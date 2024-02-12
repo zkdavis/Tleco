@@ -197,7 +197,6 @@ pub fn a_mb(nu: f64,b: f64,n0: f64,gmin: f64,gmax: f64,qq: f64, rma_func: Option
     let chi = nu / nu_b;
     let a2 = arma_qromb(chi, qq, gmin.ln(), gmax.ln(), rma_func);
     let absor = AMBCONST * nu_b * n0 * a2 * gmin.powf(qq) / nu.powi(2);
-
     absor
 }
 
@@ -210,18 +209,20 @@ pub fn arma_qromb(chi: f64, q: f64, lga: f64, lgb: f64, rma_func: Option<fn(f64,
 
     h[0] = 1.0;
 
-    for j in 1..=JMAX {
-        arma_trapzd(chi, q, lga, lgb, &mut s[j - 1], j, rma_func);
+    for j in 0..JMAX {
+        arma_trapzd(chi, q, lga, lgb, &mut s[j], j + 1, rma_func);
         if j >= K {
-            let pol_r = polint(&h[j - KM..=j], &s[j - KM..=j], 0.0);
+            let h_slice = &h[(j - KM)..=j];
+            let s_slice = &s[(j - KM)..=j];
+            let pol_r = polint(h_slice, s_slice, 0.0);
             (qromb,dqromb) = pol_r.unwrap();
             if dqromb.abs() <= EPS * qromb.abs() {
                 return qromb;
             }
         }
-        if j < JMAX {
-            s[j] = s[j - 1];
-            h[j] = 0.25 * h[j - 1];
+        if j < JMAX - 1 {
+            s[j + 1] = s[j];
+            h[j + 1] = 0.25 * h[j];
         }
     }
 
@@ -236,6 +237,7 @@ pub fn arma_qromb(chi: f64, q: f64, lga: f64, lgb: f64, rma_func: Option<fn(f64,
 
     qromb
 }
+
 
 
 pub fn arma_trapzd(chi: f64,q: f64,lga: f64,lgb: f64,s: &mut f64,n: usize, rma_func: Option<fn(f64, f64) -> f64>) {
@@ -253,16 +255,51 @@ pub fn arma_trapzd(chi: f64,q: f64,lga: f64,lgb: f64,s: &mut f64,n: usize, rma_f
         let fb = egb.powf(-q) * func(chi, egb) * (q + 1.0 + egb.powi(2) / (egb.powi(2) - 1.0));
         *s = 0.5 * (lgb - lga) * (fa + fb);
     } else {
-        let it = 2_usize.pow(n as u32 - 2);
+        let it = 2usize.pow(n as u32 - 2);
         del = (lgb - lga) / it as f64;
         lg = lga + 0.5 * del;
-
-        for _ in 0..it {
+        let mut fsum = 0.0;
+        for _i in 0..it {
             eg = lg.exp();
             fsum += eg.powf(-q) * func(chi, eg) * (q + 1.0 + eg.powi(2) / (eg.powi(2) - 1.0));
             lg += del;
         }
 
         *s = 0.5 * (*s + del * fsum);
+    }
+}
+
+
+///////
+/////// radiation transfer
+///////
+
+
+pub fn rad_trans_blob(R: f64, jnu: &Array1<f64>, anu: &Array1<f64>) -> Array1<f64> {
+    let nf = jnu.len();
+    let mut inu = Array1::<f64>::zeros(nf);
+
+    for j in 0..nf {
+        inu[j] = 2.0 * R * jnu[j] * opt_depth_blob(R, anu[j],);
+    }
+
+    inu
+}
+
+
+pub fn opt_depth_blob(r: f64, absor: f64) -> f64 {
+    let tau = f64::max(1e-100, 2.0 * r * absor);
+    if tau <= 1e-10 {
+        1.0
+    } else {
+        let mut u = if tau > 100.0 {
+            0.5 - 1.0 / tau.powi(2)
+        } else if tau >= 0.01 && tau <= 100.0 {
+            0.5 * (1.0 - 2.0 * (1.0 - (1.0 + tau) * (-tau).exp()) / tau.powi(2))
+        } else {
+            (tau / 3.0) - 0.125 * tau.powi(2)
+        };
+        u = 3.0 * u / tau;
+        u
     }
 }
