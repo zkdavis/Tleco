@@ -83,14 +83,14 @@ for i in range(1,len(t)):
     j_s[i,:],ambs[i,:] = para.syn_emissivity_full(f,g,n[i,:],B,with_abs) #,sync and absorb
     I_s[i,:] = para.rad_trans_blob(R,j_s[i,:],ambs[i,:])
     j_ssc[i,:] = para.ic_iso_powlaw_full(f,I_s[i,:],g,n[i,:])
-    # I_ssc[i, :] = para.radiation.radtrans_blob(j_ssc[i, :], R, ambs[i, :])
+    I_ssc[i, :] = para.rad_trans_blob(R,j_ssc[i, :], ambs[i, :])
     # dotgKN = para.radiation.rad_cool_pwl(g, f, 4 * np.pi * I_s[i, :]  / cLight, cool_withKN)
     gdot[i,:] = gdot[0,:] #+ dotgKN
 
 pc.plot_n(g,n,t)
 # pc.plot_j(f,f*(j_s),t)
 pc.plot_j(f,f*(j_s+j_ssc),t)
-pc.plot_I(f,np.pi * 4* (I_s)*f,t)
-# pc.plot_I(f,np.pi * 4* (I_ssc + I_s)*f,t)
+# pc.plot_I(f,np.pi * 4* (I_s)*f,t)
+pc.plot_I(f,np.pi * 4* (I_ssc + I_s)*f,t)
 # pc.plot_n(g,gdot[0:1,:],t[0:1])
 # pc.plot_n(g,gdot,t)

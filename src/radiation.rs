@@ -272,7 +272,7 @@ pub fn arma_trapzd(chi: f64,q: f64,lga: f64,lgb: f64,s: &mut f64,n: usize, rma_f
 
 
 
-pub fn ic_iso_powlaw(nuout: f64, nu: &Array1<f64>, n: &Array1<f64>, g: &Array1<f64>, inu: &Array1<f64>) -> f64{
+pub fn ic_iso_powlaw(nuout: f64, nu: &Array1<f64>, inu: &Array1<f64>, n: &Array1<f64>, g: &Array1<f64>) -> f64{
     let ng = g.len();
     let nf = nu.len();
     let mut jnu = 0.0;
@@ -286,10 +286,11 @@ pub fn ic_iso_powlaw(nuout: f64, nu: &Array1<f64>, n: &Array1<f64>, g: &Array1<f
             let f2 = nuout / (4.0 * nu[j + 1]);
             let g2 = g[ng - 1].min(gkn);
             let g1 = g[0].max(f1.sqrt());
-
             if g1 < g2 {
                 for k in 0..ng-1 {
-                    if g[k] < g1 || g[k] > g2 { continue; }
+                    if g[k] < g1 || g[k] > g2 {
+                    continue;
+                     }
                     if n[k] > 1e-200 && n[k + 1] > 1e-200 {
                         let mut q = -((n[k + 1] / n[k]).ln()) / ((g[k + 1] / g[k]).ln());
                         q = q.clamp(-8.0, 8.0);
@@ -299,7 +300,6 @@ pub fn ic_iso_powlaw(nuout: f64, nu: &Array1<f64>, n: &Array1<f64>, g: &Array1<f
                         let gmx_star = g[k + 1].min(gkn);
                         let w1 = f1.min(gmx_star.powi(2));
                         let w2 = f2.max(0.25);
-
                         if w1 > w2 {
                              let emis = if 0.25 < f1 && f1 < g[k].powi(2) {
                                 sscg1iso(gmx_star.powi(-2), g[k].powi(-2), w2, w1, s1, s2)
@@ -311,7 +311,6 @@ pub fn ic_iso_powlaw(nuout: f64, nu: &Array1<f64>, n: &Array1<f64>, g: &Array1<f
                             } else {
                                 0.0
                             };
-                            println!("{}",emis);
                             jnu += emis * n[k] * g[k].powf(q) * inu[j] * SIGMAT * f1.powf(-l);
                         }
                     }
