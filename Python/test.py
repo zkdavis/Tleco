@@ -1,7 +1,7 @@
 import pyparamo
 import numpy as np
-pi = pyparamo.get_pi()
-print(pi)
+c = pyparamo.get_c()
+print(c)
 g = np.logspace(0,np.log10(1.5e8),300)
 betav = pyparamo.bofg(g)
 betas = pyparamo.bofg(g[27])

@@ -13,7 +13,7 @@ mod radiation;
 
 /// Example retrieving constant from constants file can be improved by using macros
 #[pyfunction]
-fn get_pi() -> PyResult<f64> {
+fn get_c() -> PyResult<f64> {
     Ok(constants::CLIGHT)
 }
 /// functions from SRtoolkit
@@ -68,10 +68,11 @@ fn syn_emissivity_full(freqs: Vec<f64>, g: Vec<f64>, n: Vec<f64>, b: f64, with_a
 /// A Python module implemented in Rust.
 #[pymodule]
 fn pyparamo(_py: Python, m: &PyModule) -> PyResult<()> {
-    m.add_function(wrap_pyfunction!(get_pi, m)?)?;
+    m.add_function(wrap_pyfunction!(get_c, m)?)?;
     m.add_function(wrap_pyfunction!(bofg, m)?)?;
     m.add_function(wrap_pyfunction!(eq_59_park1995, m)?)?;
     m.add_function(wrap_pyfunction!(fp_findif_difu, m)?)?;
     m.add_function(wrap_pyfunction!(syn_emissivity_full, m)?)?;
     Ok(())
 }
+
