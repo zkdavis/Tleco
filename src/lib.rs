@@ -10,6 +10,7 @@ mod distribs;
 mod misc;
 mod specialf;
 mod radiation;
+mod pwl_integ;
 
 /// Example retrieving constant from constants file can be improved by using macros
 #[pyfunction]
@@ -65,6 +66,29 @@ fn syn_emissivity_full(freqs: Vec<f64>, g: Vec<f64>, n: Vec<f64>, b: f64, with_a
 }
 
 
+#[pyfunction]
+pub fn rad_trans_blob(R: f64, jnu: Vec<f64>, anu: Vec<f64>) -> PyResult<Vec<f64>> {
+    let jnu_arr = Array1::from_vec(jnu);
+    let anu_arr = Array1::from_vec(anu);
+    let result =  radiation::rad_trans_blob(R, &jnu_arr, &anu_arr);
+
+    Ok(result.to_vec())
+}
+
+
+#[pyfunction]
+fn ic_iso_powlaw_full(freqs: Vec<f64>, inu: Vec<f64>, g: Vec<f64>, n: Vec<f64>) -> PyResult<Vec<f64>> {
+    let freqs_array = Array1::from_vec(freqs);
+    let inu_array = Array1::from_vec(inu);
+    let g_array = Array1::from_vec(g);
+    let n_array = Array1::from_vec(n);
+
+    let result = radiation::ic_iso_powlaw_full(&freqs_array, &inu_array, &g_array, &n_array);
+
+    Ok(result.to_vec())
+}
+
+
 /// A Python module implemented in Rust.
 #[pymodule]
 fn pyparamo(_py: Python, m: &PyModule) -> PyResult<()> {
@@ -73,6 +97,8 @@ fn pyparamo(_py: Python, m: &PyModule) -> PyResult<()> {
     m.add_function(wrap_pyfunction!(eq_59_park1995, m)?)?;
     m.add_function(wrap_pyfunction!(fp_findif_difu, m)?)?;
     m.add_function(wrap_pyfunction!(syn_emissivity_full, m)?)?;
+    m.add_function(wrap_pyfunction!(rad_trans_blob, m)?)?;
+    m.add_function(wrap_pyfunction!(ic_iso_powlaw_full, m)?)?;
     Ok(())
 }
 

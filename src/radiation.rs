@@ -3,6 +3,7 @@ use ndarray::parallel::prelude::*;
 
 use crate::constants::*;
 use crate::misc::*;
+use crate::pwl_integ::*;
 
 
 pub fn syn_emissivity(freq: f64, gg: &Array1<f64>, nn: &Array1<f64>, b: f64,  rma_func: Option<fn(f64, f64) -> f64>) -> f64 {
@@ -197,7 +198,6 @@ pub fn a_mb(nu: f64,b: f64,n0: f64,gmin: f64,gmax: f64,qq: f64, rma_func: Option
     let chi = nu / nu_b;
     let a2 = arma_qromb(chi, qq, gmin.ln(), gmax.ln(), rma_func);
     let absor = AMBCONST * nu_b * n0 * a2 * gmin.powf(qq) / nu.powi(2);
-
     absor
 }
 
@@ -210,18 +210,20 @@ pub fn arma_qromb(chi: f64, q: f64, lga: f64, lgb: f64, rma_func: Option<fn(f64,
 
     h[0] = 1.0;
 
-    for j in 1..=JMAX {
-        arma_trapzd(chi, q, lga, lgb, &mut s[j - 1], j, rma_func);
+    for j in 0..JMAX {
+        arma_trapzd(chi, q, lga, lgb, &mut s[j], j + 1, rma_func);
         if j >= K {
-            let pol_r = polint(&h[j - KM..=j], &s[j - KM..=j], 0.0);
+            let h_slice = &h[(j - KM)..=j];
+            let s_slice = &s[(j - KM)..=j];
+            let pol_r = polint(h_slice, s_slice, 0.0);
             (qromb,dqromb) = pol_r.unwrap();
             if dqromb.abs() <= EPS * qromb.abs() {
                 return qromb;
             }
         }
-        if j < JMAX {
-            s[j] = s[j - 1];
-            h[j] = 0.25 * h[j - 1];
+        if j < JMAX - 1 {
+            s[j + 1] = s[j];
+            h[j + 1] = 0.25 * h[j];
         }
     }
 
@@ -236,6 +238,7 @@ pub fn arma_qromb(chi: f64, q: f64, lga: f64, lgb: f64, rma_func: Option<fn(f64,
 
     qromb
 }
+
 
 
 pub fn arma_trapzd(chi: f64,q: f64,lga: f64,lgb: f64,s: &mut f64,n: usize, rma_func: Option<fn(f64, f64) -> f64>) {
@@ -253,16 +256,153 @@ pub fn arma_trapzd(chi: f64,q: f64,lga: f64,lgb: f64,s: &mut f64,n: usize, rma_f
         let fb = egb.powf(-q) * func(chi, egb) * (q + 1.0 + egb.powi(2) / (egb.powi(2) - 1.0));
         *s = 0.5 * (lgb - lga) * (fa + fb);
     } else {
-        let it = 2_usize.pow(n as u32 - 2);
+        let it = 2usize.pow(n as u32 - 2);
         del = (lgb - lga) / it as f64;
         lg = lga + 0.5 * del;
-
-        for _ in 0..it {
+        let mut fsum = 0.0;
+        for _i in 0..it {
             eg = lg.exp();
             fsum += eg.powf(-q) * func(chi, eg) * (q + 1.0 + eg.powi(2) / (eg.powi(2) - 1.0));
             lg += del;
         }
 
         *s = 0.5 * (*s + del * fsum);
+    }
+}
+
+
+
+pub fn ic_iso_powlaw(nuout: f64, nu: &Array1<f64>, inu: &Array1<f64>, n: &Array1<f64>, g: &Array1<f64>) -> f64{
+    let ng = g.len();
+    let nf = nu.len();
+    let mut jnu = 0.0;
+
+    for j in 0..nf-1 {
+        if inu[j] > 1e-200 && inu[j + 1] > 1e-200 {
+            let mut l = (-((inu[j + 1] / inu[j]).ln())) / ((nu[j + 1] / nu[j]).ln());
+            l = l.clamp(-8.0, 8.0);
+            let gkn = MASS_E * CLIGHT.powi(2) / (HPLANCK * nu[j + 1]);
+            let f1 = nuout / (4.0 * nu[j]);
+            let f2 = nuout / (4.0 * nu[j + 1]);
+            let g2 = g[ng - 1].min(gkn);
+            let g1 = g[0].max(f1.sqrt());
+            if g1 < g2 {
+                for k in 0..ng-1 {
+                    if g[k] < g1 || g[k] > g2 {
+                    continue;
+                     }
+                    if n[k] > 1e-200 && n[k + 1] > 1e-200 {
+                        let mut q = -((n[k + 1] / n[k]).ln()) / ((g[k + 1] / g[k]).ln());
+                        q = q.clamp(-8.0, 8.0);
+
+                        let s1 = (q - 1.0) / 2.0;
+                        let s2 = (2.0 * l - q - 1.0) / 2.0;
+                        let gmx_star = g[k + 1].min(gkn);
+                        let w1 = f1.min(gmx_star.powi(2));
+                        let w2 = f2.max(0.25);
+                        if w1 > w2 {
+                             let emis = if 0.25 < f1 && f1 < g[k].powi(2) {
+                                sscg1iso(gmx_star.powi(-2), g[k].powi(-2), w2, w1, s1, s2)
+                            } else if f1 <= g[k].powi(2) && f2 <= g[k].powi(2) {
+                                sscg1iso(gmx_star.powi(-2), g[k].powi(-2), w2, g[k].powi(2), s1, s2)
+                                + sscg2iso(gmx_star.powi(-2), 1.0, g[k].powi(2), w1, s1, s2)
+                            } else if f2 <= gmx_star.powi(2) && f2 > g[k].powi(2) {
+                                sscg2iso(gmx_star.powi(-2), 1.0, w2, w1, s1, s2)
+                            } else {
+                                0.0
+                            };
+                            jnu += emis * n[k] * g[k].powf(q) * inu[j] * SIGMAT * f1.powf(-l);
+                        }
+                    }
+                }
+            }
+        }
+    }
+    jnu
+}
+
+/*
+pub fn syn_emissivity_full(freqs: &Array1<f64>,g: &Array1<f64>,n: &Array1<f64>,b: f64,with_abs: bool) -> (Array1<f64>, Array1<f64>) {
+    let numdf = freqs.len();
+    let mut jmbs = Array1::<f64>::zeros(numdf);
+    let mut ambs = Array1::<f64>::zeros(numdf);
+
+
+    let results: Vec<_> = freqs.axis_iter(Axis(0))
+        .into_par_iter()
+        .map(|freq| {
+            let freq = *freq.first().unwrap();
+            let jmb = syn_emissivity(freq, &g, &n, b, Some(rma_new));
+            let amb = if with_abs { syn_absorption(freq, &g, &n, b, Some(rma_new)) } else { 0.0 };
+            (jmb, amb)
+        })
+        .collect();
+
+    for (i, (jmb, amb)) in results.into_iter().enumerate() {
+        jmbs[i] = jmb;
+        if with_abs {
+            ambs[i] = amb;
+        }
+    }
+
+    (jmbs, ambs)
+}
+*/
+
+
+pub fn ic_iso_powlaw_full(freqs: &Array1<f64>, inu: &Array1<f64>, g: &Array1<f64>, n: &Array1<f64>) -> Array1<f64> {
+    let numdf = freqs.len();
+    let mut jic = Array1::<f64>::zeros(numdf);
+
+
+    let results: Vec<_> = freqs.axis_iter(Axis(0))
+        .into_par_iter()
+        .map(|freq| {
+            let freq = *freq.first().unwrap();
+            let j_ic = ic_iso_powlaw( freq, &freqs, &inu, &n, &g);
+            j_ic
+        })
+        .collect();
+
+    //todo get rid of this redundant loop
+    for (i, j_ic) in results.into_iter().enumerate() {
+        jic[i] = j_ic;
+    }
+
+
+    jic
+}
+
+///////
+/////// radiation transfer
+///////
+
+
+pub fn rad_trans_blob(R: f64, jnu: &Array1<f64>, anu: &Array1<f64>) -> Array1<f64> {
+    let nf = jnu.len();
+    let mut inu = Array1::<f64>::zeros(nf);
+
+    for j in 0..nf {
+        inu[j] = 2.0 * R * jnu[j] * opt_depth_blob(R, anu[j],);
+    }
+
+    inu
+}
+
+
+pub fn opt_depth_blob(r: f64, absor: f64) -> f64 {
+    let tau = f64::max(1e-100, 2.0 * r * absor);
+    if tau <= 1e-10 {
+        1.0
+    } else {
+        let mut u = if tau > 100.0 {
+            0.5 - 1.0 / tau.powi(2)
+        } else if tau >= 0.01 && tau <= 100.0 {
+            0.5 * (1.0 - 2.0 * (1.0 - (1.0 + tau) * (-tau).exp()) / tau.powi(2))
+        } else {
+            (tau / 3.0) - 0.125 * tau.powi(2)
+        };
+        u = 3.0 * u / tau;
+        u
     }
 }
