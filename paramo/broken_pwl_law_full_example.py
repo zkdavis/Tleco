@@ -1,6 +1,6 @@
-import pyparamo as para
+import paramo as para
 import numpy as np
-import plots_code as pc
+import paramo.plots_code as pc
 
 ##Example injectecting a broken power law into a blob that is cooled by synchrotron and ssc
 
