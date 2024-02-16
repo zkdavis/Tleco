@@ -3,7 +3,7 @@ requires = ["maturin>=1.4,<2.0"]
 build-backend = "maturin"
 
 [project]
-name = "pyparamo"
+name = "paramo"
 requires-python = ">=3.8"
 classifiers = [
     "Programming Language :: Rust",
@@ -14,3 +14,5 @@ dynamic = ["version"]
 
 [tool.maturin]
 features = ["pyo3/extension-module"]
+module-name = "paramo"
+python-source = "python"
