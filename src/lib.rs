@@ -5,7 +5,7 @@ use ndarray::{Array1, ArrayView1};
 
 /// fortran dependencies
 mod constants;
-mod SRtoolkit;
+mod srtoolkit;
 mod distribs;
 mod misc;
 mod specialf;
@@ -17,15 +17,39 @@ mod pwl_integ;
 fn get_pi() -> PyResult<f64> {
     Ok(constants::CLIGHT)
 }
-/// functions from SRtoolkit
+
+/// functions from srtoolkit
 #[pyfunction]
-fn bofg(py: Python, arg: &PyAny) -> PyResult<PyObject> {
+fn gofb(py: Python, arg: &PyAny) -> PyResult<PyObject> {
     if let Ok(single_value) = arg.extract::<f64>() {
         // Call the scalar version of bofg
-        Ok(SRtoolkit::srtoolkit::bofg_s(single_value).into_py(py))
+        Ok(srtoolkit::srtoolkit::lorentz_f(single_value).into_py(py))
     } else if let Ok(vec) = arg.extract::<Vec<f64>>() {
         // Call the vector version of bofg
-        Ok(SRtoolkit::srtoolkit::bofg_v(&vec).into_py(py))
+        // Ok(srtoolkit::srtoolkit::bofg_v(&vec).into_py(py))
+        Ok(vec.iter()
+            .map(|&beta| srtoolkit::srtoolkit::lorentz_f(beta))
+            .collect::<Vec<_>>()
+            .into_py(py))
+    } else {
+        Err(PyErr::new::<pyo3::exceptions::PyTypeError, _>(
+            "Argument must be a float or a list of floats.",
+        ))
+    }
+}
+
+#[pyfunction]
+fn bofg(py: Python, arg: &PyAny) -> PyResult<PyObject> {
+    if let Ok(scalar) = arg.extract::<f64>() {
+        // Call the scalar version of bofg
+        Ok(srtoolkit::srtoolkit::v_rela(scalar).into_py(py))
+    } else if let Ok(vec) = arg.extract::<Vec<f64>>() {
+        // Call the vector version of bofg
+        // Ok(srtoolkit::srtoolkit::bofg_v(&vec).into_py(py))
+        Ok(vec.iter()
+            .map(|&gamma| srtoolkit::srtoolkit::v_rela(gamma))
+            .collect::<Vec<_>>()
+            .into_py(py))
     } else {
         Err(PyErr::new::<pyo3::exceptions::PyTypeError, _>(
             "Argument must be a float or a list of floats.",
@@ -91,8 +115,9 @@ fn ic_iso_powlaw_full(freqs: Vec<f64>, inu: Vec<f64>, g: Vec<f64>, n: Vec<f64>) 
 
 /// A Python module implemented in Rust.
 #[pymodule]
-fn pyparamo(_py: Python, m: &PyModule) -> PyResult<()> {
+fn paramo(_py: Python, m: &PyModule) -> PyResult<()> {
     m.add_function(wrap_pyfunction!(get_pi, m)?)?;
+    m.add_function(wrap_pyfunction!(gofb, m)?)?;
     m.add_function(wrap_pyfunction!(bofg, m)?)?;
     m.add_function(wrap_pyfunction!(eq_59_park1995, m)?)?;
     m.add_function(wrap_pyfunction!(fp_findif_difu, m)?)?;
