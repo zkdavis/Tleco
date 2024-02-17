@@ -406,3 +406,80 @@ pub fn opt_depth_blob(r: f64, absor: f64) -> f64 {
         u
     }
 }
+
+
+
+
+
+
+
+pub fn trans_kn(x: f64, p: f64) -> f64 {
+    x.powf(-p) * (1.0 + x).powf(-1.5)
+}
+
+pub fn trans_kn_fit(x: f64, p: f64) -> f64 {
+    x.powf(-p) * (-1.01819432 - 0.67980349 * x.ln() - 0.14948459 * x.ln().powi(2) + 0.00627589 * x.ln().powi(3)).exp()
+}
+
+
+fn rad_cool_pwl(gg: &Array1<f64>, freqs: &Array1<f64>, uu: &Array1<f64>, with_kn: bool) -> Array1<f64> {
+    let urad_const = 4.0 * SIGMA_T * C_LIGHT / (3.0 * ENERGY_E);
+    let xi_c = 4.0 * H_MEC2;
+    let ng = gg.len();
+    let nf = freqs.len();
+    let mut xi = Array2::<f64>::zeros((ng, nf));
+    let mut uxi = Array2::<f64>::zeros((ng, nf));
+    let mut dotg = Array1::<f64>::zeros(ng);
+
+    Zip::from(xi.genrows_mut()).and(gg).for_each(|mut xi_row, &g| {
+        Zip::from(xi_row.iter_mut()).and(freqs).for_each(|xi_val, &freq| {
+            *xi_val = xi_c * g * freq;
+        });
+    });
+
+    Zip::from(uxi.genrows_mut()).and(gg).and(uu.broadcast((ng, 1)).unwrap()).for_each(|mut uxi_row, &g, uu_row| {
+        Zip::from(uxi_row.iter_mut()).and(uu_row).for_each(|uxi_val, &u| {
+            *uxi_val = u * xi_c * g;
+        });
+    });
+
+    dotg.par_iter_mut().enumerate().for_each(|(k, dotg_val)| {
+    let mut usum = 0.0;
+
+    let xi_k = xi.row(k);
+    let uxi_k = uxi.row(k);
+
+    for j in 0..nf-1 {
+        if uxi_k[j + 1] > 1e-100 && uxi_k[j] > 1e-100 {
+            let xi_rat = xi_k[j + 1] / xi_k[j];
+            let uind = ((uxi_k[j + 1] / uxi_k[j]).ln() / xi_rat.ln()).clamp(-8.0, 8.0);
+            let mut ueval = 0.0;
+
+            if with_kn {
+                if xi_k[j] >= 1e2 {
+                    // ueval calculation for xi_k[j] >= 1e2 with Klein-Nishina corrections
+                    ueval = 4.5 * uxi_k[j] * (qinteg(xi_rat, uind + 2.0, 1e-6) + (xi_k[j].ln() - (11.0 / 6.0)) * pinteg(xi_rat, uind + 2.0, 1e-6)) / xi_k[j];
+                } else if xi_k[j] >= 1.0 && xi_k[j] < 1e2 {
+                    // ueval calculation for 1.0 <= xi_k[j] < 1e2 with Klein-Nishina corrections
+                    ueval = qromb_w2arg(|x, p| trans_kn_fit(&Array1::from(vec![x]), p)[0], xi_k[j], xi_k[j + 1], uind) * uxi_k[j] * xi_k[j].powf(uind);
+                } else if xi_k[j] >= 1e-3 && xi_k[j] < 1.0 {
+                    // ueval calculation for 1e-3 <= xi_k[j] < 1.0 with Klein-Nishina corrections
+                    ueval = qromb_w2arg(|x, p| trans_kn(&Array1::from(vec![x]), p)[0], xi_k[j], xi_k[j + 1], uind) * uxi_k[j] * xi_k[j].powf(uind);
+                } else {
+                    // ueval calculation for xi_k[j] < 1e-3
+                    ueval = uxi_k[j] * xi_k[j] * pinteg(xi_rat, uind, 1e-6);
+                }
+            } else {
+                // Without Klein-Nishina corrections
+                ueval = uxi_k[j] * xi_k[j] * pinteg(xi_rat, uind, 1e-6);
+            }
+
+            usum += ueval;
+        }
+    }
+
+    *dotg_val = urad_const * usum / xi_c.powi(2);
+});
+
+    dotg
+}
