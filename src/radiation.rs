@@ -322,33 +322,6 @@ pub fn ic_iso_powlaw(nuout: f64, nu: &Array1<f64>, inu: &Array1<f64>, n: &Array1
     jnu
 }
 
-/*
-pub fn syn_emissivity_full(freqs: &Array1<f64>,g: &Array1<f64>,n: &Array1<f64>,b: f64,with_abs: bool) -> (Array1<f64>, Array1<f64>) {
-    let numdf = freqs.len();
-    let mut jmbs = Array1::<f64>::zeros(numdf);
-    let mut ambs = Array1::<f64>::zeros(numdf);
-
-
-    let results: Vec<_> = freqs.axis_iter(Axis(0))
-        .into_par_iter()
-        .map(|freq| {
-            let freq = *freq.first().unwrap();
-            let jmb = syn_emissivity(freq, &g, &n, b, Some(rma_new));
-            let amb = if with_abs { syn_absorption(freq, &g, &n, b, Some(rma_new)) } else { 0.0 };
-            (jmb, amb)
-        })
-        .collect();
-
-    for (i, (jmb, amb)) in results.into_iter().enumerate() {
-        jmbs[i] = jmb;
-        if with_abs {
-            ambs[i] = amb;
-        }
-    }
-
-    (jmbs, ambs)
-}
-*/
 
 
 pub fn ic_iso_powlaw_full(freqs: &Array1<f64>, inu: &Array1<f64>, g: &Array1<f64>, n: &Array1<f64>) -> Array1<f64> {
@@ -441,18 +414,19 @@ pub fn rad_cool_pwl(gg: &Array1<f64>, freqs: &Array1<f64>, uu: &Array1<f64>, wit
    let results: Vec<f64> = (0..ng).into_par_iter()
     .map(|k| {
         let mut usum = 0.0;
+        let mut ueval = 0.0;
         for j in 0..nf-1 {
             if uxi[[k, j + 1]] > 1e-100 && uxi[[k, j]] > 1e-100 {
                 let xi_rat = xi[[k, j + 1]] / xi[[k, j]];
                 let uind = ((uxi[[k, j + 1]] / uxi[[k, j]]).ln() / xi_rat.ln()).clamp(-8.0, 8.0);
 
-                let mut ueval = if with_kn {
+                ueval = if with_kn {
                     if xi[[k, j]] >= 1e2 {
                         4.5 * uxi[[k, j]] * (qinteg(xi_rat, uind + 2.0, 1e-6) + (xi[[k, j]].ln() - 11.0 / 6.0) * pinteg(xi_rat, uind + 2.0, 1e-6)) / xi[[k, j]]
                     } else if xi[[k, j]] >= 1.0 && xi[[k, j]] < 1e2 {
-                        trans_kn_fit(xi[[k, j]], uind) * uxi[[k, j]] * xi[[k, j]].powf(uind)
+                        qromb_w2arg(Some(trans_kn_fit), xi[[k, j]], xi[[k, j+1]], uind).unwrap() * uxi[[k,j]] * xi[[k, j]].powf(uind)
                     } else if xi[[k, j]] >= 1e-3 && xi[[k, j]] < 1.0 {
-                        trans_kn(xi[[k, j]], uind) * uxi[[k, j]] * xi[[k, j]].powf(uind)
+                        qromb_w2arg(Some(trans_kn), xi[[k, j]], xi[[k, j+1]], uind).unwrap() * uxi[[k,j]] * xi[[k, j]].powf(uind)
                     } else {
                         uxi[[k, j]] * xi[[k, j]] * pinteg(xi_rat, uind, 1e-6)
                     }
