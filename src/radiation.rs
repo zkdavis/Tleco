@@ -352,7 +352,7 @@ pub fn ic_iso_powlaw_full(freqs: &Array1<f64>, inu: &Array1<f64>, g: &Array1<f64
 
 
 
-pub fn ic_iso_monochrom(nuout: f64, uext: f64, nuext: f64, n: &Array1<f64>, g: &Array1<f64>) -> f64 {
+pub fn ic_iso_monochrome(nuout: f64, uext: f64, nuext: f64, n: &Array1<f64>, g: &Array1<f64>) -> f64 {
 /* @func: computes the emissivity($\frac{ergs}{cm^3 Sr}$) at frequency nuout(Hz) from inverse Compton (IC) scattering in an isotropic photon field assuming the photon
 field is monochromatic*/
 // @param nuout: frequency(Hz) in the comoving frame to compute emission at
@@ -397,7 +397,7 @@ field is monochromatic*/
 
 
 
-pub fn ic_iso_monochrom_full(freqs: &Array1<f64>, uext: f64, nuext: f64, n: &Array1<f64>, g: &Array1<f64>) -> Array1<f64> {
+pub fn ic_iso_monochrome_full(freqs: &Array1<f64>, uext: f64, nuext: f64, n: &Array1<f64>, g: &Array1<f64>) -> Array1<f64> {
 /* @func: computes the emissivity($\frac{ergs}{cm^3 Sr}$) from inverse Compton (IC) scattering in an isotropic photon field assuming the photon
 field is monochromatic*/
 // @param freq: frequency(Hz) array in the comoving frame to compute emission over.
@@ -416,7 +416,7 @@ field is monochromatic*/
         .into_par_iter()
         .map(|freq| {
             let freq = *freq.first().unwrap();
-            let j_ic = ic_iso_monochrom( freq,uext,nuext, &n, &g);
+            let j_ic = ic_iso_monochrome( freq,uext,nuext, &n, &g);
             j_ic
         })
         .collect();

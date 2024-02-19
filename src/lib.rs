@@ -90,11 +90,11 @@ fn ic_iso_powlaw_full(freqs: Vec<f64>, inu: Vec<f64>, g: Vec<f64>, n: Vec<f64>) 
 
 
 #[pyfunction]
-fn ic_iso_monochrom_full(freqs: Vec<f64>, uext: f64,nuext: f64, n: Vec<f64>, g: Vec<f64>) -> PyResult<Vec<f64>> {
+fn ic_iso_monochrome_full(freqs: Vec<f64>, uext: f64,nuext: f64, n: Vec<f64>, g: Vec<f64>) -> PyResult<Vec<f64>> {
     let freqs_array = Array1::from_vec(freqs);
     let g_array = Array1::from_vec(g);
     let n_array = Array1::from_vec(n);
-    let result = radiation::ic_iso_monochrom_full(&freqs_array, uext, nuext, &g_array, &n_array);
+    let result = radiation::ic_iso_monochrome_full(&freqs_array, uext, nuext, &n_array,&g_array);
     Ok(result.to_vec())
 }
 
@@ -110,6 +110,6 @@ fn pyparamo(_py: Python, m: &PyModule) -> PyResult<()> {
     m.add_function(wrap_pyfunction!(syn_emissivity_full, m)?)?;
     m.add_function(wrap_pyfunction!(rad_trans_blob, m)?)?;
     m.add_function(wrap_pyfunction!(ic_iso_powlaw_full, m)?)?;
-    m.add_function(wrap_pyfunction!(ic_iso_monochrom_full, m)?)?;
+    m.add_function(wrap_pyfunction!(ic_iso_monochrome_full, m)?)?;
     Ok(())
 }

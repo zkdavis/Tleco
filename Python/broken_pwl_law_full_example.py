@@ -88,7 +88,7 @@ for i in range(1,len(t)):
     j_ssc[i,:] = para.ic_iso_powlaw_full(f,I_s[i,:],g,n[i,:])
     # j_eic[i,:] = para.ic_iso_powlaw_full(f,I_s[i,:],g,n[i,:])
     I_ssc[i, :] = para.rad_trans_blob(R,j_ssc[i, :], ambs[i, :])
-    j_eic[i, :] = para.ic_iso_monochrom_full(f, uext,nuout, n[i, :],g)
+    j_eic[i, :] = para.ic_iso_monochrome_full(f, uext,nuout, n[i, :],g)
     # dotgKN = para.radiation.rad_cool_pwl(g, f, 4 * np.pi * I_s[i, :]  / cLight, cool_withKN)
     gdot[i,:] = gdot[0,:] #+ dotgKN
 
