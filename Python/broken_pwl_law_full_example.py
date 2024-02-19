@@ -39,6 +39,7 @@ n = np.zeros([numt,numg]) #particle distribution dn/d\gamma
 gdot = np.zeros([numt,numg]) #fp cooling term
 j_s = np.zeros([numt,numf]) #synchrotron emissivity
 j_ssc = np.zeros([numt,numf]) #ssc emissivity
+j_eic = np.zeros([numt,numf]) #ssc emissivity
 I_s = np.zeros([numt,numf])#synchrotron Intensity
 I_ssc = np.zeros([numt,numf])#ssc Intensity
 ambs = np.zeros([numt,numf]) #absorbtion coefficient
@@ -76,6 +77,8 @@ def broken_pwl(n0,g,p1,p2,gmin_cut,g2_cut):
 gdot[0,:] = 1e5*(4/3)*sigmaT*cLight*((B**2)/(8*np.pi))*(g**2)/(me*(cLight**2))
 # D = 0.5*gdot[0,:]
 n[0,:] = broken_pwl(n0,g,p1,p2,gcut,g2cut)
+uext=1e-3
+nuout=1e14
 ###time loop
 for i in range(1,len(t)):
     dt = t[i] - t[i-1]
@@ -83,13 +86,15 @@ for i in range(1,len(t)):
     j_s[i,:],ambs[i,:] = para.syn_emissivity_full(f,g,n[i,:],B,with_abs) #,sync and absorb
     I_s[i,:] = para.rad_trans_blob(R,j_s[i,:],ambs[i,:])
     j_ssc[i,:] = para.ic_iso_powlaw_full(f,I_s[i,:],g,n[i,:])
+    # j_eic[i,:] = para.ic_iso_powlaw_full(f,I_s[i,:],g,n[i,:])
     I_ssc[i, :] = para.rad_trans_blob(R,j_ssc[i, :], ambs[i, :])
+    j_eic[i, :] = para.ic_iso_monochrome_full(f, uext,nuout, n[i, :],g)
     # dotgKN = para.radiation.rad_cool_pwl(g, f, 4 * np.pi * I_s[i, :]  / cLight, cool_withKN)
     gdot[i,:] = gdot[0,:] #+ dotgKN
 
 pc.plot_n(g,n,t)
 # pc.plot_j(f,f*(j_s),t)
-pc.plot_j(f,f*(j_s+j_ssc),t)
+pc.plot_j(f,f*(j_s+j_ssc+j_eic),t)
 # pc.plot_I(f,np.pi * 4* (I_s)*f,t)
 pc.plot_I(f,np.pi * 4* (I_ssc + I_s)*f,t)
 # pc.plot_n(g,gdot[0:1,:],t[0:1])
