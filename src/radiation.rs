@@ -324,6 +324,7 @@ pub fn ic_iso_powlaw(nuout: f64, nu: &Array1<f64>, inu: &Array1<f64>, n: &Array1
 
 
 
+
 pub fn ic_iso_powlaw_full(freqs: &Array1<f64>, inu: &Array1<f64>, g: &Array1<f64>, n: &Array1<f64>) -> Array1<f64> {
     let numdf = freqs.len();
     let mut jic = Array1::<f64>::zeros(numdf);
@@ -334,6 +335,89 @@ pub fn ic_iso_powlaw_full(freqs: &Array1<f64>, inu: &Array1<f64>, g: &Array1<f64
         .map(|freq| {
             let freq = *freq.first().unwrap();
             let j_ic = ic_iso_powlaw( freq, &freqs, &inu, &n, &g);
+            j_ic
+        })
+        .collect();
+
+    //todo get rid of this redundant loop
+    for (i, j_ic) in results.into_iter().enumerate() {
+        jic[i] = j_ic;
+    }
+
+
+    jic
+}
+
+
+
+
+
+
+pub fn ic_iso_monochrome(nuout: f64, uext: f64, nuext: f64, n: &Array1<f64>, g: &Array1<f64>) -> f64 {
+/* @func: computes the emissivity($\frac{ergs}{cm^3 Sr}$) at frequency nuout(Hz) from inverse Compton (IC) scattering in an isotropic photon field assuming the photon
+field is monochromatic*/
+// @param nuout: frequency(Hz) in the comoving frame to compute emission at
+// @param nuext: frequency(Hz) in the comoving frame of the external photon field.
+// @param uext: energy density($\frac{ergs}{cm^-3}$) of the external photon field in the comoving frame.
+// @param n: particle distribution as function of lorentz factor
+// @param g: Lorentz factor grid
+// @return jnu: emissivity($\frac{ergs}{cm^3 Sr}$) for frequency nuout
+
+    let ng = g.len();
+    let gkn = MASS_E * CLIGHT.powi(2) / (HPLANCK * nuext);
+    let w = nuout / (4.0 * nuext);
+    let mut jnu = 0.0;
+    let mut emis = 0.0;
+    const EPS: f64 = 1e-9;
+
+    for k in 0..ng - 1 {
+        let gmx_star = g[k + 1].min(gkn);
+
+        if n[k] > 1e-200 && n[k + 1] > 1e-200 {
+            let q = -(n[k + 1] / n[k]).ln() / (g[k + 1] / g[k]).ln();
+            let q = q.clamp(-8.0, 8.0);
+            let q1 = 0.5 * (q - 1.0);
+            let q2 = 0.5 * (q + 1.0);
+            let q1 = q1.clamp(-8.0, 8.0);
+            let q2 = q2.clamp(-8.0, 8.0);
+
+            emis = if 0.25 <= w && w <= g[k].powi(2) && g[k] <= gmx_star {
+                (w / gmx_star.powi(2)).powf(q2) * (pinteg((gmx_star / g[k]).powi(2), -q1, EPS) - (w / gmx_star.powi(2)) * pinteg((gmx_star / g[k]).powi(2), -q2, EPS))
+            } else if g[k].powi(2) < w && w <= gmx_star.powi(2) {
+                (w / gmx_star.powi(2)).powf(q2) * (pinteg(gmx_star.powi(2) / w, -q1, EPS) - (w / gmx_star.powi(2)) * pinteg(gmx_star.powi(2) / w, -q2, EPS))
+            } else {
+                0.0
+            };
+
+            jnu += emis * n[k] * g[k].powf(q) * w.powf(-q1) * CLIGHT * SIGMAT * uext / (4.0 * nuext);
+        }
+    }
+
+    jnu
+}
+
+
+
+pub fn ic_iso_monochrome_full(freqs: &Array1<f64>, uext: f64, nuext: f64, n: &Array1<f64>, g: &Array1<f64>) -> Array1<f64> {
+/* @func: computes the emissivity($\frac{ergs}{cm^3 Sr}$) from inverse Compton (IC) scattering in an isotropic photon field assuming the photon
+field is monochromatic*/
+// @param freq: frequency(Hz) array in the comoving frame to compute emission over.
+// @param nuext: frequency(Hz) in the comoving frame of the external photon field.
+// @param uext: energy density($\frac{ergs}{cm^-3}$) of the external photon field in the comoving frame.
+// @param n: particle distribution as function of lorentz factor
+// @param g: Lorentz factor grid
+// @return jic: emissivity($\frac{ergs}{cm^3 Sr}$) for frequency range freq
+
+// todo: create one of these that combines mono and powlaw
+    let numdf = freqs.len();
+    let mut jic = Array1::<f64>::zeros(numdf);
+
+
+    let results: Vec<_> = freqs.axis_iter(Axis(0))
+        .into_par_iter()
+        .map(|freq| {
+            let freq = *freq.first().unwrap();
+            let j_ic = ic_iso_monochrome( freq,uext,nuext, &n, &g);
             j_ic
         })
         .collect();
