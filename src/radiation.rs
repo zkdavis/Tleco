@@ -418,6 +418,13 @@ fn trans_kn_fit(x: f64, p: f64) -> f64 {
 }
 
 fn rad_cool_pwl(gg: &Array1<f64>, freqs: &Array1<f64>, uu: &Array1<f64>, with_kn: bool) -> Array1<f64> {
+    /* @func: computes the radiative inverse Compton cooling ($\frac{\partial g}{\partial t}$ [$s^{-1}$]) from isotropic photon field uu($\frac{ergs}{cm^-3}$) */
+    // @param gg: Lorentz factor grid
+    // @param freqs: frequency(Hz) array in the comoving frame.
+    // @param uu: energy density($\frac{ergs}{cm^-3}$) of photon field in the comoving frame for every frequency in freqs.
+    // @param with_kn: bool that will include Klein Nishina affects to the cross section when true.
+    // @return dotg: radiative cooling ($\frac{\partial g}{\partial t}$ [$s^{-1}$])
+
     let urad_const = 4.0 * SIGMAT * CLIGHT / (3.0 * ENERGY_E);
     let xi_c = 4.0 * H_MEC2;
     let ng = gg.len();
@@ -465,6 +472,13 @@ fn rad_cool_pwl(gg: &Array1<f64>, freqs: &Array1<f64>, uu: &Array1<f64>, with_kn
 }
 
 fn rad_cool_mono(gg: &Array1<f64>, nu0: f64, u0: f64, with_kn: bool) -> Array1<f64> {
+    /* @func: computes the radiative inverse Compton cooling ($\frac{\partial g}{\partial t}$ [$s^{-1}$]) from isotropic monotonic photon field u0($\frac{ergs}{cm^-3}$) */
+    // @param gg: Lorentz factor grid
+    // @param nu0: frequency(Hz) in the comoving frame of the photon field u0.
+    // @param u0: energy density($\frac{ergs}{cm^-3}$) of photon field in the comoving frame.
+    // @param with_kn: bool that will include Klein Nishina affects to the cross section when true.
+    // @return dotg: radiative cooling ($\frac{\partial g}{\partial t}$ [$s^{-1}$])
+
     let urad_const = 4.0 * SIGMAT * CLIGHT / (3.0 * ENERGY_E);
     let xi0: Array1<f64> = 4.0 * gg * nu0 * H_MEC2;
 
@@ -485,5 +499,7 @@ fn rad_cool_mono(gg: &Array1<f64>, nu0: f64, u0: f64, with_kn: bool) -> Array1<f
         })
         .collect();
 
-    Array1::from_vec(results_vec)
+     let dotg: Array1<f64> = Array1::from_vec(results_vec);
+
+     dotg
 }
