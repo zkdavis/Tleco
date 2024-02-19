@@ -4,6 +4,7 @@ use ndarray::parallel::prelude::*;
 use crate::constants::*;
 use crate::misc::*;
 use crate::pwl_integ::*;
+use crate::SRtoolkit::srtoolkit::*;
 
 
 pub fn syn_emissivity(freq: f64, gg: &Array1<f64>, nn: &Array1<f64>, b: f64,  rma_func: Option<fn(f64, f64) -> f64>) -> f64 {
@@ -461,4 +462,28 @@ fn rad_cool_pwl(gg: &Array1<f64>, freqs: &Array1<f64>, uu: &Array1<f64>, with_kn
     let dotg: Array1<f64> = Array::from(results);
 
     dotg
+}
+
+fn rad_cool_mono(gg: &Array1<f64>, nu0: f64, u0: f64, with_kn: bool) -> Array1<f64> {
+    let urad_const = 4.0 * SIGMAT * CLIGHT / (3.0 * ENERGY_E);
+    let xi0: Array1<f64> = 4.0 * gg * nu0 * H_MEC2;
+
+    let results_vec: Vec<f64> = (0..gg.len()).into_par_iter()
+        .map(|i| {
+            let g = gg[i];
+            let xi = xi0[i];
+            if with_kn {
+                match xi {
+                    x if x >= 1e2 => urad_const * u0 * pofg_s(g) * 4.5 * (x.ln() - 11.0 / 6.0) / x.powi(2),
+                    x if x >= 1.0 => urad_const * u0 * pofg_s(g) * (-1.01819432 - 0.67980349 * x.ln() - 0.14948459 * x.ln().powi(2) + 0.00627589 * x.ln().powi(3)).exp(),
+                    x if x > 1e-3 => urad_const * u0 * pofg_s(g) * (1.0 + x).powf(-1.5),
+                    _ => urad_const * u0 * pofg_s(g),
+                }
+            } else {
+                urad_const * u0 * pofg_s(g)
+            }
+        })
+        .collect();
+
+    Array1::from_vec(results_vec)
 }
