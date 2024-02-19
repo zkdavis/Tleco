@@ -1,9 +1,10 @@
-use ndarray::{Array, Axis, Array1};
+use ndarray::{Array, Axis, Array1,Array2, Zip};
 use ndarray::parallel::prelude::*;
 
 use crate::constants::*;
 use crate::misc::*;
 use crate::pwl_integ::*;
+use crate::SRtoolkit::srtoolkit::*;
 
 
 pub fn syn_emissivity(freq: f64, gg: &Array1<f64>, nn: &Array1<f64>, b: f64,  rma_func: Option<fn(f64, f64) -> f64>) -> f64 {
@@ -462,4 +463,101 @@ pub fn opt_depth_blob(r: f64, absor: f64) -> f64 {
         u = 3.0 * u / tau;
         u
     }
+}
+
+
+fn trans_kn(x: f64, p: f64) -> f64 {
+    x.powf(-p) * (1.0 + x).powf(-1.5)
+}
+
+fn trans_kn_fit(x: f64, p: f64) -> f64 {
+    x.powf(-p) * (-1.01819432 - 0.67980349 * x.ln() - 0.14948459 * x.ln().powi(2) + 0.00627589 * x.ln().powi(3)).exp()
+}
+
+pub fn rad_cool_pwl(gg: &Array1<f64>, freqs: &Array1<f64>, uu: &Array1<f64>, with_kn: bool) -> Array1<f64> {
+    /* @func: computes the radiative inverse Compton cooling ($\frac{\partial g}{\partial t}$ [$s^{-1}$]) from isotropic photon field uu($\frac{ergs}{cm^-3}$) */
+    // @param gg: Lorentz factor grid
+    // @param freqs: frequency(Hz) array in the comoving frame.
+    // @param uu: energy density($\frac{ergs}{cm^-3}$) of photon field in the comoving frame for every frequency in freqs.
+    // @param with_kn: bool that will include Klein Nishina affects to the cross section when true.
+    // @return dotg: radiative cooling ($\frac{\partial g}{\partial t}$ [$s^{-1}$])
+
+    let urad_const = 4.0 * SIGMAT * CLIGHT / (3.0 * ENERGY_E);
+    let xi_c = 4.0 * H_MEC2;
+    let ng = gg.len();
+    let nf = freqs.len();
+
+    let xi = Array2::from_shape_fn((ng, nf), |(k, j)| {
+        xi_c * gg[k] * freqs[j]
+    });
+
+    let uxi: Array2<f64> = Array2::from_shape_fn((ng, nf), |(k, j)| {
+        gg[k] * uu[j] * xi_c
+    });
+
+   let results: Vec<f64> = (0..ng).into_par_iter()
+    .map(|k| {
+        let mut usum = 0.0;
+        let mut ueval = 0.0;
+        for j in 0..nf-1 {
+            if uxi[[k, j + 1]] > 1e-100 && uxi[[k, j]] > 1e-100 {
+                let xi_rat = xi[[k, j + 1]] / xi[[k, j]];
+                let uind = ((uxi[[k, j + 1]] / uxi[[k, j]]).ln() / xi_rat.ln()).clamp(-8.0, 8.0);
+
+                ueval = if with_kn {
+                    if xi[[k, j]] >= 1e2 {
+                        4.5 * uxi[[k, j]] * (qinteg(xi_rat, uind + 2.0, 1e-6) + (xi[[k, j]].ln() - 11.0 / 6.0) * pinteg(xi_rat, uind + 2.0, 1e-6)) / xi[[k, j]]
+                    } else if xi[[k, j]] >= 1.0 && xi[[k, j]] < 1e2 {
+                        qromb_w2arg(Some(trans_kn_fit), xi[[k, j]], xi[[k, j+1]], uind).unwrap() * uxi[[k,j]] * xi[[k, j]].powf(uind)
+                    } else if xi[[k, j]] >= 1e-3 && xi[[k, j]] < 1.0 {
+                        qromb_w2arg(Some(trans_kn), xi[[k, j]], xi[[k, j+1]], uind).unwrap() * uxi[[k,j]] * xi[[k, j]].powf(uind)
+                    } else {
+                        uxi[[k, j]] * xi[[k, j]] * pinteg(xi_rat, uind, 1e-6)
+                    }
+                } else {
+                    uxi[[k, j]] * xi[[k, j]] * pinteg(xi_rat, uind, 1e-6)
+                };
+
+                usum += ueval;
+            }
+        }
+        urad_const * usum / xi_c.powi(2)
+    }).collect();
+
+    let dotg: Array1<f64> = Array::from(results);
+
+    dotg
+}
+
+pub fn rad_cool_mono(gg: &Array1<f64>, nu0: f64, u0: f64, with_kn: bool) -> Array1<f64> {
+    /* @func: computes the radiative inverse Compton cooling ($\frac{\partial g}{\partial t}$ [$s^{-1}$]) from isotropic monotonic photon field u0($\frac{ergs}{cm^-3}$) */
+    // @param gg: Lorentz factor grid
+    // @param nu0: frequency(Hz) in the comoving frame of the photon field u0.
+    // @param u0: energy density($\frac{ergs}{cm^-3}$) of photon field in the comoving frame.
+    // @param with_kn: bool that will include Klein Nishina affects to the cross section when true.
+    // @return dotg: radiative cooling ($\frac{\partial g}{\partial t}$ [$s^{-1}$])
+
+    let urad_const = 4.0 * SIGMAT * CLIGHT / (3.0 * ENERGY_E);
+    let xi0: Array1<f64> = 4.0 * gg * nu0 * H_MEC2;
+
+    let results_vec: Vec<f64> = (0..gg.len()).into_par_iter()
+        .map(|i| {
+            let g = gg[i];
+            let xi = xi0[i];
+            if with_kn {
+                match xi {
+                    x if x >= 1e2 => urad_const * u0 * pofg_s(g) * 4.5 * (x.ln() - 11.0 / 6.0) / x.powi(2),
+                    x if x >= 1.0 => urad_const * u0 * pofg_s(g) * (-1.01819432 - 0.67980349 * x.ln() - 0.14948459 * x.ln().powi(2) + 0.00627589 * x.ln().powi(3)).exp(),
+                    x if x > 1e-3 => urad_const * u0 * pofg_s(g) * (1.0 + x).powf(-1.5),
+                    _ => urad_const * u0 * pofg_s(g),
+                }
+            } else {
+                urad_const * u0 * pofg_s(g)
+            }
+        })
+        .collect();
+
+     let dotg: Array1<f64> = Array1::from_vec(results_vec);
+
+     dotg
 }
