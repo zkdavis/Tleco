@@ -5,7 +5,7 @@ use ndarray::{Array1, ArrayView1};
 
 /// fortran dependencies
 mod constants;
-mod SRtoolkit;
+mod srtoolkit;
 mod distribs;
 mod misc;
 mod specialf;
@@ -17,15 +17,39 @@ mod pwl_integ;
 fn get_pi() -> PyResult<f64> {
     Ok(constants::CLIGHT)
 }
-/// functions from SRtoolkit
+
+/// functions from srtoolkit
 #[pyfunction]
-fn bofg(py: Python, arg: &PyAny) -> PyResult<PyObject> {
+fn gofb(py: Python, arg: &PyAny) -> PyResult<PyObject> {
     if let Ok(single_value) = arg.extract::<f64>() {
         // Call the scalar version of bofg
-        Ok(SRtoolkit::srtoolkit::bofg_s(single_value).into_py(py))
+        Ok(srtoolkit::srtoolkit::lorentz_f(single_value).into_py(py))
     } else if let Ok(vec) = arg.extract::<Vec<f64>>() {
         // Call the vector version of bofg
-        Ok(SRtoolkit::srtoolkit::bofg_v(&vec).into_py(py))
+        // Ok(srtoolkit::srtoolkit::bofg_v(&vec).into_py(py))
+        Ok(vec.iter()
+            .map(|&beta| srtoolkit::srtoolkit::lorentz_f(beta))
+            .collect::<Vec<_>>()
+            .into_py(py))
+    } else {
+        Err(PyErr::new::<pyo3::exceptions::PyTypeError, _>(
+            "Argument must be a float or a list of floats.",
+        ))
+    }
+}
+
+#[pyfunction]
+fn bofg(py: Python, arg: &PyAny) -> PyResult<PyObject> {
+    if let Ok(scalar) = arg.extract::<f64>() {
+        // Call the scalar version of bofg
+        Ok(srtoolkit::srtoolkit::v_rela(scalar).into_py(py))
+    } else if let Ok(vec) = arg.extract::<Vec<f64>>() {
+        // Call the vector version of bofg
+        // Ok(srtoolkit::srtoolkit::bofg_v(&vec).into_py(py))
+        Ok(vec.iter()
+            .map(|&gamma| srtoolkit::srtoolkit::v_rela(gamma))
+            .collect::<Vec<_>>()
+            .into_py(py))
     } else {
         Err(PyErr::new::<pyo3::exceptions::PyTypeError, _>(
             "Argument must be a float or a list of floats.",
@@ -42,10 +66,10 @@ fn eq_59_park1995(t: f64, g: Vec<f64>) -> PyResult<Vec<f64>> {
 }
 
 #[pyfunction]
-fn fp_findif_difu(dt_in: f64, g: Vec<f64>, nin: Vec<f64>, gdot_in: Vec<f64>,
+fn fp_findif_difu(dt_in: f64, gamma_bins: Vec<f64>, nin: Vec<f64>, gdot_in: Vec<f64>,
               din: Vec<f64>, qin: Vec<f64>, tesc_in: f64, tlc: f64,
               check_params: Option<bool>) -> PyResult<Vec<f64>>{
-    let g_array = ArrayView1::from(&g).to_owned();
+    let g_array = ArrayView1::from(&gamma_bins).to_owned();
     let nin_array = ArrayView1::from(&nin).to_owned();
     let gdot_in_array = ArrayView1::from(&gdot_in).to_owned();
     let din_array = ArrayView1::from(&din).to_owned();
@@ -56,21 +80,21 @@ fn fp_findif_difu(dt_in: f64, g: Vec<f64>, nin: Vec<f64>, gdot_in: Vec<f64>,
 
 
 #[pyfunction]
-fn syn_emissivity_full(freqs: Vec<f64>, g: Vec<f64>, n: Vec<f64>, b: f64, with_abs: bool) -> PyResult<(Vec<f64>, Vec<f64>)> {
+fn syn_emissivity_full(freqs: Vec<f64>, gamma_bins: Vec<f64>, n_distrib: Vec<f64>, b_field: f64, with_abs: bool) -> PyResult<(Vec<f64>, Vec<f64>)> {
     let freqs_arr = Array1::from(freqs);
-    let g_arr = Array1::from(g);
-    let n_arr = Array1::from(n);
+    let g_arr = Array1::from(gamma_bins);
+    let n_arr = Array1::from(n_distrib);
 
-    let (jmbs, ambs) = radiation::syn_emissivity_full(&freqs_arr, &g_arr, &n_arr, b, with_abs);
+    let (jmbs, ambs) = radiation::syn_emissivity_full(&freqs_arr, &g_arr, &n_arr, b_field, with_abs);
     Ok((jmbs.to_vec(), ambs.to_vec()))
 }
 
 
 #[pyfunction]
-pub fn rad_trans_blob(R: f64, jnu: Vec<f64>, anu: Vec<f64>) -> PyResult<Vec<f64>> {
-    let jnu_arr = Array1::from_vec(jnu);
-    let anu_arr = Array1::from_vec(anu);
-    let result =  radiation::rad_trans_blob(R, &jnu_arr, &anu_arr);
+pub fn rad_trans_blob(blob_radius: f64, j_nu: Vec<f64>, a_nu: Vec<f64>) -> PyResult<Vec<f64>> {
+    let jnu_arr = Array1::from_vec(j_nu);
+    let anu_arr = Array1::from_vec(a_nu);
+    let result =  radiation::rad_trans_blob(blob_radius, &jnu_arr, &anu_arr);
 
     Ok(result.to_vec())
 }
@@ -120,8 +144,9 @@ fn ic_iso_monochrome_full(freqs: Vec<f64>, uext: f64,nuext: f64, n: Vec<f64>, g:
 
 /// A Python module implemented in Rust.
 #[pymodule]
-fn pyparamo(_py: Python, m: &PyModule) -> PyResult<()> {
+fn paramo(_py: Python, m: &PyModule) -> PyResult<()> {
     m.add_function(wrap_pyfunction!(get_pi, m)?)?;
+    m.add_function(wrap_pyfunction!(gofb, m)?)?;
     m.add_function(wrap_pyfunction!(bofg, m)?)?;
     m.add_function(wrap_pyfunction!(eq_59_park1995, m)?)?;
     m.add_function(wrap_pyfunction!(fp_findif_difu, m)?)?;
