@@ -47,7 +47,7 @@ def j_ic_iso(eps_s:float,eps_array,u:typing.Callable,n_array:[float],g_array:[fl
         Fc_i_array = Fc(q=q_i_array,Gam=Gamma_i_array)
         g_int_array[i] = g_int(Fc_i_array)
     # assumes eps_array is logspaced
-    return fcon*np.trapz(u(eps_array)*g_int_array*np.log(10)/eps_array)
+    return fcon*np.trapz(u(eps_array)*g_int_array*np.log(10)/eps_array,eps_array)
 
 def j_ic_iso_full(eps_s_array:[float],eps_array:[float],u:typing.Callable,n_array:[float],g_array:[float]):
     j_ic = np.zeros_like(eps_s_array)
