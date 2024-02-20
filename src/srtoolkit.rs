@@ -9,17 +9,17 @@ pub mod srtoolkit {
     use ndarray::Array1;
 
     // Lorentz factor
-    pub fn v_rela(g: f64) -> f64 {
-        if g <= 1.0 {
+    pub fn v_rela(lorentz_factor: f64) -> f64 {
+        if lorentz_factor <= 1.0 {
             0.0
         } else {
-            (1.0 - 1.0 / (g * g)).sqrt()
+            (1.0 - 1.0 / (lorentz_factor.powi(2))).sqrt()
         }
     }
 
     // gofb_s: Scalar version
     pub fn lorentz_f(beta: f64) -> f64 {
-        1.0 / (1.0 - beta * beta).sqrt()
+        1.0 / (1.0 - beta.powi(2)).sqrt()
     }
 
     // pofg_s: Scalar version
