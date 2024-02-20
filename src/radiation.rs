@@ -57,19 +57,15 @@ pub fn syn_emissivity_full(freqs: &Array1<f64>, gamma_bins: &Array1<f64>, n_dist
 }
 
 
-
-
-
-pub fn j_mb(nu: f64, b_field: f64, n0: f64, gmin: f64, gmax: f64, qq: f64, rma_func: Option<fn(f64, f64) -> f64>) -> f64 {
+pub fn j_mb(nu: f64, b_field: f64, n0: f64, gamma_min: f64, gamma_max: f64, qq: f64, rma_func: Option<fn(f64, f64) -> f64>) -> f64 {
     let nu_b = NUCONST * b_field;
     let chi = nu / nu_b;
-    let i2 = rma_qromb(chi, qq, gmin.ln(), gmax.ln(), rma_func);
-    let emiss = JMBCONST * nu_b * n0 * i2 * gmin.powf(qq);
-
+    let i2 = rma_qromb(chi, qq, gamma_min.ln(), gamma_max.ln(), rma_func);
+    let emiss = JMBCONST * nu_b * n0 * i2 * gamma_min.powf(qq);
     emiss
 }
 
-pub fn rma_qromb(chi: f64, q: f64, lga: f64, lgb: f64, rma_func: Option<fn(f64, f64) -> f64>) -> f64{
+pub fn rma_qromb(chi: f64, q_gamma_index: f64, log_gamma_a: f64, log_gamma_b: f64, rma_func: Option<fn(f64, f64) -> f64>) -> f64{
     const JMAX:usize = 60;
     const JMAXP:usize = 61;
     const K:usize = 10;
@@ -83,12 +79,12 @@ pub fn rma_qromb(chi: f64, q: f64, lga: f64, lgb: f64, rma_func: Option<fn(f64, 
     h[0] = 1.0;
 
     for j in 0..JMAX  {
-        rma_trapzd(chi, q, lga, lgb, &mut s[j], j + 1, rma_func);
+        rma_trapzd(chi, q_gamma_index, log_gamma_a, log_gamma_b, &mut s[j], j + 1, rma_func);
         if j >= K - 1 {
             let h_slice = &h[(j - KM)..=j];
             let s_slice = &s[(j - KM)..=j];
             let pol_r = polint(h_slice, s_slice, 0.0);
-            (qromb,dqromb) = pol_r.unwrap();
+            (qromb, dqromb) = pol_r.unwrap();
             if dqromb.abs() <= EPS * qromb.abs() {
                 return qromb;
             }
@@ -101,9 +97,9 @@ pub fn rma_qromb(chi: f64, q: f64, lga: f64, lgb: f64, rma_func: Option<fn(f64, 
 
     println!("RMA_qromb error");
     println!("chi    = {}", chi);
-    println!("q      = {}", q);
-    println!("ga     = {}", lga.exp());
-    println!("gb     = {}", lgb.exp());
+    println!("q      = {}", q_gamma_index);
+    println!("ga     = {}", log_gamma_a.exp());
+    println!("gb     = {}", log_gamma_b.exp());
     println!("qromb  = {}", qromb);
     println!("dqromb = {}", dqromb);
     eprint!("RMA_qromb: too many steps");
@@ -171,19 +167,19 @@ pub fn rma_new(chi: f64, g: f64) -> f64 {
 }
 
 
-pub fn syn_absorption(freq: f64,  gg: &Array1<f64>, nn: &Array1<f64>, b_field: f64,rma_func: Option<fn(f64, f64) -> f64>) -> f64 {
-    let ng = gg.len();
+pub fn syn_absorption(freq: f64,  gamma_bins: &Array1<f64>, n_distrib: &Array1<f64>, b_field: f64, rma_func: Option<fn(f64, f64) -> f64>) -> f64 {
+    let gamma_bins_size = gamma_bins.len();
     let mut anu = 0.0;
 
-    for k in 0..ng-1 {
-        if nn[k] > 1e-100 && nn[k + 1] > 1e-100 {
-            let mut qq = -(nn[k + 1] / nn[k]).ln() / (gg[k + 1] / gg[k]).ln();
+    for k in 0..gamma_bins_size - 1 {
+        if n_distrib[k] > 1e-100 && n_distrib[k + 1] > 1e-100 {
+            let mut qq = -(n_distrib[k + 1] / n_distrib[k]).ln() / (gamma_bins[k + 1] / gamma_bins[k]).ln();
             if qq > 8.0 {
                 qq = 8.0;
             } else if qq < -8.0 {
                 qq = -8.0;
             }
-            anu += a_mb(freq, b_field, nn[k], gg[k], gg[k + 1], qq, rma_func);
+            anu += a_mb(freq, b_field, n_distrib[k], gamma_bins[k], gamma_bins[k + 1], qq, rma_func);
         }
     }
 
