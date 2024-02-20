@@ -1,23 +1,25 @@
-import unittest
 import numpy as np
+import pytest as pt
+
 import paramo as pp
 
-class TestPyParamo(unittest.TestCase):
-    def test_v_rela_s(self):
-        """
-        Test relativistic speed function with scalar argument
-        """
-        beta = 0.1
-        gamma = 1.005
-        self.assertAlmostEqual(pp.gofb(beta), gamma, 3)
+class TestSpecRelaToolkit(object):
+    def test_v_rela_s(self) -> None:
+        test_beta = 0.1
+        expected_gamma = 1.005
+        assert pp.gofb(test_beta) == pt.approx(expected_gamma, rel=1e-3)
 
-    def test_v_rela_v(self):
-        """
-        Test relativistic speed function with array argument
-        """
-        beta = np.array([0.1, 0.25, 0.5])
-        gamma = np.array([1.005, 1.033, 1.155])
-        self.assertIsNone(np.testing.assert_allclose(pp.gofb(beta), gamma, atol=1))
+    def test_v_rela_v(self) -> None:
+        test_beta = np.array([0.1, 0.25, 0.5])
+        expected_gamma = np.array([1.005, 1.033, 1.155])
+        assert pp.gofb(test_beta) == pt.approx(expected_gamma, rel=1e-3)
 
-if __name__ == "__main__":
-    unittest.main()
+    def test_lorentz_f_s(self) -> None:
+        expected_beta = 0.1
+        test_gamma = 1.005
+        assert pp.bofg(test_gamma) == pt.approx(expected_beta, rel=1e-2)
+
+    def test_lorentz_f_v(self) -> None:
+        expected_beta = np.array([0.1, 0.25, 0.5])
+        test_gamma = np.array([1.005, 1.033, 1.155])
+        assert pp.bofg(test_gamma) == pt.approx(expected_beta, rel=1e-2)
