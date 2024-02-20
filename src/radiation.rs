@@ -1,25 +1,25 @@
-use ndarray::{Array, Axis, Array1,Array2, Zip};
+use ndarray::{Array, Axis, Array1, Array2, Zip};
 use ndarray::parallel::prelude::*;
 
 use crate::constants::*;
 use crate::misc::*;
 use crate::pwl_integ::*;
-use crate::SRtoolkit::srtoolkit::*;
+use crate::srtoolkit::srtoolkit::*;
 
 
-pub fn syn_emissivity(freq: f64, gg: &Array1<f64>, nn: &Array1<f64>, b: f64,  rma_func: Option<fn(f64, f64) -> f64>) -> f64 {
-    let ng = gg.len();
+pub fn syn_emissivity(freq: f64, gamma_bins: &Array1<f64>, n_distrib: &Array1<f64>, b_field: f64,  rma_func: Option<fn(f64, f64) -> f64>) -> f64 {
+    let gamma_bins_size = gamma_bins.len();
     let mut jnu = 0f64;
 
-    for k in 0..ng-1 {
-        if nn[k] > 1e-100 && nn[k + 1] > 1e-100 {
-            let mut qq = -((nn[k + 1] / nn[k]).ln()) / ((gg[k + 1] / gg[k]).ln());
+    for k in 0..gamma_bins_size - 1 {
+        if n_distrib[k] > 1e-100 && n_distrib[k + 1] > 1e-100 {
+            let mut qq = -((n_distrib[k + 1] / n_distrib[k]).ln()) / ((gamma_bins[k + 1] / gamma_bins[k]).ln());
             if qq > 8.0 {
                 qq = 8.0;
             } else if qq < -8.0 {
                 qq = -8.0;
             }
-            jnu += j_mb(freq, b, nn[k], gg[k], gg[k + 1], qq, rma_func);
+            jnu += j_mb(freq, b_field, n_distrib[k], gamma_bins[k], gamma_bins[k + 1], qq, rma_func);
         }
     }
 
@@ -30,7 +30,7 @@ pub fn syn_emissivity(freq: f64, gg: &Array1<f64>, nn: &Array1<f64>, b: f64,  rm
     jnu
 }
 
-pub fn syn_emissivity_full(freqs: &Array1<f64>,g: &Array1<f64>,n: &Array1<f64>,b: f64,with_abs: bool) -> (Array1<f64>, Array1<f64>) {
+pub fn syn_emissivity_full(freqs: &Array1<f64>, gamma_bins: &Array1<f64>, n_distrib: &Array1<f64>, b_field: f64, with_abs: bool) -> (Array1<f64>, Array1<f64>) {
     let numdf = freqs.len();
     let mut jmbs = Array1::<f64>::zeros(numdf);
     let mut ambs = Array1::<f64>::zeros(numdf);
@@ -40,8 +40,8 @@ pub fn syn_emissivity_full(freqs: &Array1<f64>,g: &Array1<f64>,n: &Array1<f64>,b
         .into_par_iter()
         .map(|freq| {
             let freq = *freq.first().unwrap();
-            let jmb = syn_emissivity(freq, &g, &n, b, Some(rma_new));
-            let amb = if with_abs { syn_absorption(freq, &g, &n, b, Some(rma_new)) } else { 0.0 };
+            let jmb = syn_emissivity(freq, &gamma_bins, &n_distrib, b_field, Some(rma_new));
+            let amb = if with_abs { syn_absorption(freq, &gamma_bins, &n_distrib, b_field, Some(rma_new)) } else { 0.0 };
             (jmb, amb)
         })
         .collect();
@@ -60,8 +60,8 @@ pub fn syn_emissivity_full(freqs: &Array1<f64>,g: &Array1<f64>,n: &Array1<f64>,b
 
 
 
-pub fn j_mb(nu: f64, b: f64, n0: f64, gmin: f64, gmax: f64, qq: f64, rma_func: Option<fn(f64, f64) -> f64>) -> f64 {
-    let nu_b = NUCONST * b;
+pub fn j_mb(nu: f64, b_field: f64, n0: f64, gmin: f64, gmax: f64, qq: f64, rma_func: Option<fn(f64, f64) -> f64>) -> f64 {
+    let nu_b = NUCONST * b_field;
     let chi = nu / nu_b;
     let i2 = rma_qromb(chi, qq, gmin.ln(), gmax.ln(), rma_func);
     let emiss = JMBCONST * nu_b * n0 * i2 * gmin.powf(qq);
@@ -70,11 +70,11 @@ pub fn j_mb(nu: f64, b: f64, n0: f64, gmin: f64, gmax: f64, qq: f64, rma_func: O
 }
 
 pub fn rma_qromb(chi: f64, q: f64, lga: f64, lgb: f64, rma_func: Option<fn(f64, f64) -> f64>) -> f64{
-    const JMAX:usize =60;
-    const JMAXP:usize =61;
+    const JMAX:usize = 60;
+    const JMAXP:usize = 61;
     const K:usize = 10;
     const KM:usize = 9;
-    const EPS:f64 =1e-5;
+    const EPS:f64 = 1e-5;
     let mut h: [f64; JMAX + 1] = [0.0; JMAX + 1];
     let mut s: [f64; JMAX + 1] = [0.0; JMAX + 1];
     let mut qromb = 0.0;
@@ -171,7 +171,7 @@ pub fn rma_new(chi: f64, g: f64) -> f64 {
 }
 
 
-pub fn syn_absorption(freq: f64,  gg: &Array1<f64>, nn: &Array1<f64>, b: f64,rma_func: Option<fn(f64, f64) -> f64>) -> f64 {
+pub fn syn_absorption(freq: f64,  gg: &Array1<f64>, nn: &Array1<f64>, b_field: f64,rma_func: Option<fn(f64, f64) -> f64>) -> f64 {
     let ng = gg.len();
     let mut anu = 0.0;
 
@@ -183,7 +183,7 @@ pub fn syn_absorption(freq: f64,  gg: &Array1<f64>, nn: &Array1<f64>, b: f64,rma
             } else if qq < -8.0 {
                 qq = -8.0;
             }
-            anu += a_mb(freq, b, nn[k], gg[k], gg[k + 1], qq, rma_func);
+            anu += a_mb(freq, b_field, nn[k], gg[k], gg[k + 1], qq, rma_func);
         }
     }
 
@@ -321,8 +321,6 @@ pub fn ic_iso_powlaw(nuout: f64, nu: &Array1<f64>, inu: &Array1<f64>, n: &Array1
     }
     jnu
 }
-
-
 
 
 pub fn ic_iso_powlaw_full(freqs: &Array1<f64>, inu: &Array1<f64>, g: &Array1<f64>, n: &Array1<f64>) -> Array1<f64> {
