@@ -4,7 +4,7 @@ use std::option::Option;
 use scilib::math::bessel;
 use num::complex::Complex64;
 use crate::constants::*;
-use crate::SRtoolkit::srtoolkit::*;
+use crate::srtoolkit::srtoolkit::*;
 use crate::misc::*;
 use crate::specialf::*;
 
