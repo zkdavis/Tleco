@@ -88,6 +88,35 @@ fn ic_iso_powlaw_full(freqs: Vec<f64>, inu: Vec<f64>, g: Vec<f64>, n: Vec<f64>) 
     Ok(result.to_vec())
 }
 
+#[pyfunction]
+fn rad_cool_pwl(gg: Vec<f64>, freqs: Vec<f64>, uu: Vec<f64>, with_kn: bool) -> PyResult<Vec<f64>> {
+    let gg_array = Array1::from_vec(gg);
+    let freqs_array = Array1::from_vec(freqs);
+    let uu_array = Array1::from_vec(uu);
+
+    let result = radiation::rad_cool_pwl(&gg_array, &freqs_array, &uu_array, with_kn);
+    Ok(result.to_vec())
+}
+
+#[pyfunction]
+fn rad_cool_mono(gg: Vec<f64>,  nu0: f64, u0: f64, with_kn: bool) -> PyResult<Vec<f64>> {
+    let gg_array = Array1::from_vec(gg);
+
+    let result = radiation::rad_cool_mono(&gg_array, nu0, u0, with_kn);
+    Ok(result.to_vec())
+}
+
+
+#[pyfunction]
+fn ic_iso_monochrome_full(freqs: Vec<f64>, uext: f64,nuext: f64, n: Vec<f64>, g: Vec<f64>) -> PyResult<Vec<f64>> {
+    let freqs_array = Array1::from_vec(freqs);
+    let g_array = Array1::from_vec(g);
+    let n_array = Array1::from_vec(n);
+    let result = radiation::ic_iso_monochrome_full(&freqs_array, uext, nuext, &n_array,&g_array);
+    Ok(result.to_vec())
+}
+
+
 
 /// A Python module implemented in Rust.
 #[pymodule]
@@ -99,6 +128,9 @@ fn pyparamo(_py: Python, m: &PyModule) -> PyResult<()> {
     m.add_function(wrap_pyfunction!(syn_emissivity_full, m)?)?;
     m.add_function(wrap_pyfunction!(rad_trans_blob, m)?)?;
     m.add_function(wrap_pyfunction!(ic_iso_powlaw_full, m)?)?;
+    m.add_function(wrap_pyfunction!(rad_cool_pwl, m)?)?;
+    m.add_function(wrap_pyfunction!(rad_cool_mono, m)?)?;
+    m.add_function(wrap_pyfunction!(ic_iso_monochrome_full, m)?)?;
     Ok(())
 }
 
