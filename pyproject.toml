@@ -15,4 +15,11 @@ dynamic = ["version"]
 [tool.maturin]
 features = ["pyo3/extension-module"]
 module-name = "paramo"
-python-source = "python"
+python-source = "pysrc"
+
+[tool.pytest.ini_options]
+minversion = "6.0"
+addopts = "-ra -q"
+testpaths = [
+    "tests",
+]

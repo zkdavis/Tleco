@@ -23,12 +23,12 @@ cool_withKN = True
 R = 1e14 # size of blob
 sigma = 1e-6 #blobs magnetization
 B=0.1 #blobs magnetic field
-n0 = (B**2)/(np.pi*4*sigma*mp*(cLight**2))#particle density
+n0 = (B**2) / (np.pi * 4 * sigma * mp * (cLight**2)) #particle density
 t_esc = 1e200#R/cLight #escape time
-t_inj = R/cLight #injection time
-tlc = R/cLight #light crossing time
+t_inj = R / cLight #injection time
+tlc = R / cLight #light crossing time
 p1 = -2.5 #pwl indices
-p2 =p1 -1
+p2 = p1 - 1
 gcut = 1e2
 g2cut = 1e5
 
