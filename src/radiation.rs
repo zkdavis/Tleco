@@ -1,16 +1,17 @@
-use ndarray::{Array, Axis, Array1};
+use ndarray::{Array, Axis, Array1, Array2, Zip};
 use ndarray::parallel::prelude::*;
 
 use crate::constants::*;
 use crate::misc::*;
 use crate::pwl_integ::*;
+use crate::srtoolkit::srtoolkit::*;
 
 
 pub fn syn_emissivity(freq: f64, gamma_bins: &Array1<f64>, n_distrib: &Array1<f64>, b_field: f64,  rma_func: Option<fn(f64, f64) -> f64>) -> f64 {
     let gamma_bins_size = gamma_bins.len();
     let mut jnu = 0f64;
 
-    for k in 0..gamma_bins_size-1 {
+    for k in 0..gamma_bins_size - 1 {
         if n_distrib[k] > 1e-100 && n_distrib[k + 1] > 1e-100 {
             let mut qq = -((n_distrib[k + 1] / n_distrib[k]).ln()) / ((gamma_bins[k + 1] / gamma_bins[k]).ln());
             if qq > 8.0 {
@@ -40,9 +41,7 @@ pub fn syn_emissivity_full(freqs: &Array1<f64>, gamma_bins: &Array1<f64>, n_dist
         .map(|freq| {
             let freq = *freq.first().unwrap();
             let jmb = syn_emissivity(freq, &gamma_bins, &n_distrib, b_field, Some(rma_new));
-            let amb = if with_abs {
-                syn_absorption(freq, &gamma_bins, &n_distrib, b_field, Some(rma_new))
-             } else { 0.0 };
+            let amb = if with_abs { syn_absorption(freq, &gamma_bins, &n_distrib, b_field, Some(rma_new)) } else { 0.0 };
             (jmb, amb)
         })
         .collect();
@@ -323,34 +322,6 @@ pub fn ic_iso_powlaw(nuout: f64, nu: &Array1<f64>, inu: &Array1<f64>, n: &Array1
     jnu
 }
 
-/*
-pub fn syn_emissivity_full(freqs: &Array1<f64>,g: &Array1<f64>,n: &Array1<f64>,b: f64,with_abs: bool) -> (Array1<f64>, Array1<f64>) {
-    let numdf = freqs.len();
-    let mut jmbs = Array1::<f64>::zeros(numdf);
-    let mut ambs = Array1::<f64>::zeros(numdf);
-
-
-    let results: Vec<_> = freqs.axis_iter(Axis(0))
-        .into_par_iter()
-        .map(|freq| {
-            let freq = *freq.first().unwrap();
-            let jmb = syn_emissivity(freq, &g, &n, b_field, Some(rma_new));
-            let amb = if with_abs { syn_absorption(freq, &g, &n, b_field, Some(rma_new)) } else { 0.0 };
-            (jmb, amb)
-        })
-        .collect();
-
-    for (i, (jmb, amb)) in results.into_iter().enumerate() {
-        jmbs[i] = jmb;
-        if with_abs {
-            ambs[i] = amb;
-        }
-    }
-
-    (jmbs, ambs)
-}
-*/
-
 
 pub fn ic_iso_powlaw_full(freqs: &Array1<f64>, inu: &Array1<f64>, g: &Array1<f64>, n: &Array1<f64>) -> Array1<f64> {
     let numdf = freqs.len();
@@ -362,6 +333,89 @@ pub fn ic_iso_powlaw_full(freqs: &Array1<f64>, inu: &Array1<f64>, g: &Array1<f64
         .map(|freq| {
             let freq = *freq.first().unwrap();
             let j_ic = ic_iso_powlaw( freq, &freqs, &inu, &n, &g);
+            j_ic
+        })
+        .collect();
+
+    //todo get rid of this redundant loop
+    for (i, j_ic) in results.into_iter().enumerate() {
+        jic[i] = j_ic;
+    }
+
+
+    jic
+}
+
+
+
+
+
+
+pub fn ic_iso_monochrome(nuout: f64, uext: f64, nuext: f64, n: &Array1<f64>, g: &Array1<f64>) -> f64 {
+/* @func: computes the emissivity($\frac{ergs}{cm^3 Sr}$) at frequency nuout(Hz) from inverse Compton (IC) scattering in an isotropic photon field assuming the photon
+field is monochromatic*/
+// @param nuout: frequency(Hz) in the comoving frame to compute emission at
+// @param nuext: frequency(Hz) in the comoving frame of the external photon field.
+// @param uext: energy density($\frac{ergs}{cm^-3}$) of the external photon field in the comoving frame.
+// @param n: particle distribution as function of lorentz factor
+// @param g: Lorentz factor grid
+// @return jnu: emissivity($\frac{ergs}{cm^3 Sr}$) for frequency nuout
+
+    let ng = g.len();
+    let gkn = MASS_E * CLIGHT.powi(2) / (HPLANCK * nuext);
+    let w = nuout / (4.0 * nuext);
+    let mut jnu = 0.0;
+    let mut emis = 0.0;
+    const EPS: f64 = 1e-9;
+
+    for k in 0..ng - 1 {
+        let gmx_star = g[k + 1].min(gkn);
+
+        if n[k] > 1e-200 && n[k + 1] > 1e-200 {
+            let q = -(n[k + 1] / n[k]).ln() / (g[k + 1] / g[k]).ln();
+            let q = q.clamp(-8.0, 8.0);
+            let q1 = 0.5 * (q - 1.0);
+            let q2 = 0.5 * (q + 1.0);
+            let q1 = q1.clamp(-8.0, 8.0);
+            let q2 = q2.clamp(-8.0, 8.0);
+
+            emis = if 0.25 <= w && w <= g[k].powi(2) && g[k] <= gmx_star {
+                (w / gmx_star.powi(2)).powf(q2) * (pinteg((gmx_star / g[k]).powi(2), -q1, EPS) - (w / gmx_star.powi(2)) * pinteg((gmx_star / g[k]).powi(2), -q2, EPS))
+            } else if g[k].powi(2) < w && w <= gmx_star.powi(2) {
+                (w / gmx_star.powi(2)).powf(q2) * (pinteg(gmx_star.powi(2) / w, -q1, EPS) - (w / gmx_star.powi(2)) * pinteg(gmx_star.powi(2) / w, -q2, EPS))
+            } else {
+                0.0
+            };
+
+            jnu += emis * n[k] * g[k].powf(q) * w.powf(-q1) * CLIGHT * SIGMAT * uext / (4.0 * nuext);
+        }
+    }
+
+    jnu
+}
+
+
+
+pub fn ic_iso_monochrome_full(freqs: &Array1<f64>, uext: f64, nuext: f64, n: &Array1<f64>, g: &Array1<f64>) -> Array1<f64> {
+/* @func: computes the emissivity($\frac{ergs}{cm^3 Sr}$) from inverse Compton (IC) scattering in an isotropic photon field assuming the photon
+field is monochromatic*/
+// @param freq: frequency(Hz) array in the comoving frame to compute emission over.
+// @param nuext: frequency(Hz) in the comoving frame of the external photon field.
+// @param uext: energy density($\frac{ergs}{cm^-3}$) of the external photon field in the comoving frame.
+// @param n: particle distribution as function of lorentz factor
+// @param g: Lorentz factor grid
+// @return jic: emissivity($\frac{ergs}{cm^3 Sr}$) for frequency range freq
+
+// todo: create one of these that combines mono and powlaw
+    let numdf = freqs.len();
+    let mut jic = Array1::<f64>::zeros(numdf);
+
+
+    let results: Vec<_> = freqs.axis_iter(Axis(0))
+        .into_par_iter()
+        .map(|freq| {
+            let freq = *freq.first().unwrap();
+            let j_ic = ic_iso_monochrome( freq,uext,nuext, &n, &g);
             j_ic
         })
         .collect();
@@ -407,4 +461,101 @@ pub fn opt_depth_blob(r: f64, absor: f64) -> f64 {
         u = 3.0 * u / tau;
         u
     }
+}
+
+
+fn trans_kn(x: f64, p: f64) -> f64 {
+    x.powf(-p) * (1.0 + x).powf(-1.5)
+}
+
+fn trans_kn_fit(x: f64, p: f64) -> f64 {
+    x.powf(-p) * (-1.01819432 - 0.67980349 * x.ln() - 0.14948459 * x.ln().powi(2) + 0.00627589 * x.ln().powi(3)).exp()
+}
+
+pub fn rad_cool_pwl(gg: &Array1<f64>, freqs: &Array1<f64>, uu: &Array1<f64>, with_kn: bool) -> Array1<f64> {
+    /* @func: computes the radiative inverse Compton cooling ($\frac{\partial g}{\partial t}$ [$s^{-1}$]) from isotropic photon field uu($\frac{ergs}{cm^-3}$) */
+    // @param gg: Lorentz factor grid
+    // @param freqs: frequency(Hz) array in the comoving frame.
+    // @param uu: energy density($\frac{ergs}{cm^-3}$) of photon field in the comoving frame for every frequency in freqs.
+    // @param with_kn: bool that will include Klein Nishina affects to the cross section when true.
+    // @return dotg: radiative cooling ($\frac{\partial g}{\partial t}$ [$s^{-1}$])
+
+    let urad_const = 4.0 * SIGMAT * CLIGHT / (3.0 * ENERGY_E);
+    let xi_c = 4.0 * H_MEC2;
+    let ng = gg.len();
+    let nf = freqs.len();
+
+    let xi = Array2::from_shape_fn((ng, nf), |(k, j)| {
+        xi_c * gg[k] * freqs[j]
+    });
+
+    let uxi: Array2<f64> = Array2::from_shape_fn((ng, nf), |(k, j)| {
+        gg[k] * uu[j] * xi_c
+    });
+
+   let results: Vec<f64> = (0..ng).into_par_iter()
+    .map(|k| {
+        let mut usum = 0.0;
+        let mut ueval = 0.0;
+        for j in 0..nf-1 {
+            if uxi[[k, j + 1]] > 1e-100 && uxi[[k, j]] > 1e-100 {
+                let xi_rat = xi[[k, j + 1]] / xi[[k, j]];
+                let uind = ((uxi[[k, j + 1]] / uxi[[k, j]]).ln() / xi_rat.ln()).clamp(-8.0, 8.0);
+
+                ueval = if with_kn {
+                    if xi[[k, j]] >= 1e2 {
+                        4.5 * uxi[[k, j]] * (qinteg(xi_rat, uind + 2.0, 1e-6) + (xi[[k, j]].ln() - 11.0 / 6.0) * pinteg(xi_rat, uind + 2.0, 1e-6)) / xi[[k, j]]
+                    } else if xi[[k, j]] >= 1.0 && xi[[k, j]] < 1e2 {
+                        qromb_w2arg(Some(trans_kn_fit), xi[[k, j]], xi[[k, j+1]], uind).unwrap() * uxi[[k,j]] * xi[[k, j]].powf(uind)
+                    } else if xi[[k, j]] >= 1e-3 && xi[[k, j]] < 1.0 {
+                        qromb_w2arg(Some(trans_kn), xi[[k, j]], xi[[k, j+1]], uind).unwrap() * uxi[[k,j]] * xi[[k, j]].powf(uind)
+                    } else {
+                        uxi[[k, j]] * xi[[k, j]] * pinteg(xi_rat, uind, 1e-6)
+                    }
+                } else {
+                    uxi[[k, j]] * xi[[k, j]] * pinteg(xi_rat, uind, 1e-6)
+                };
+
+                usum += ueval;
+            }
+        }
+        urad_const * usum / xi_c.powi(2)
+    }).collect();
+
+    let dotg: Array1<f64> = Array::from(results);
+
+    dotg
+}
+
+pub fn rad_cool_mono(gg: &Array1<f64>, nu0: f64, u0: f64, with_kn: bool) -> Array1<f64> {
+    /* @func: computes the radiative inverse Compton cooling ($\frac{\partial g}{\partial t}$ [$s^{-1}$]) from isotropic monotonic photon field u0($\frac{ergs}{cm^-3}$) */
+    // @param gg: Lorentz factor grid
+    // @param nu0: frequency(Hz) in the comoving frame of the photon field u0.
+    // @param u0: energy density($\frac{ergs}{cm^-3}$) of photon field in the comoving frame.
+    // @param with_kn: bool that will include Klein Nishina affects to the cross section when true.
+    // @return dotg: radiative cooling ($\frac{\partial g}{\partial t}$ [$s^{-1}$])
+
+    let urad_const = 4.0 * SIGMAT * CLIGHT / (3.0 * ENERGY_E);
+    let xi0: Array1<f64> = 4.0 * gg * nu0 * H_MEC2;
+
+    let results_vec: Vec<f64> = (0..gg.len()).into_par_iter()
+        .map(|i| {
+            let g = gg[i];
+            let xi = xi0[i];
+            if with_kn {
+                match xi {
+                    x if x >= 1e2 => urad_const * u0 * pofg_s(g) * 4.5 * (x.ln() - 11.0 / 6.0) / x.powi(2),
+                    x if x >= 1.0 => urad_const * u0 * pofg_s(g) * (-1.01819432 - 0.67980349 * x.ln() - 0.14948459 * x.ln().powi(2) + 0.00627589 * x.ln().powi(3)).exp(),
+                    x if x > 1e-3 => urad_const * u0 * pofg_s(g) * (1.0 + x).powf(-1.5),
+                    _ => urad_const * u0 * pofg_s(g),
+                }
+            } else {
+                urad_const * u0 * pofg_s(g)
+            }
+        })
+        .collect();
+
+     let dotg: Array1<f64> = Array1::from_vec(results_vec);
+
+     dotg
 }
