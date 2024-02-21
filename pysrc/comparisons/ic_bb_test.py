@@ -10,8 +10,8 @@ if __name__ == "__main__":
     sig_T = 0.0001
     Temp = sig_T*C.energy_e/C.kBoltz
     u_bb = 1e0
-    num_eps = 100
-    num_eps_s = 100
+    num_eps = 1000
+    num_eps_s = 1000
     numg = 1000
     nu_s = np.logspace(8, 25, num_eps_s)
     eps_s = nu_s * C.hPlanck / (C.me * (C.cLight ** 2))
@@ -26,7 +26,7 @@ if __name__ == "__main__":
         return rt.BB_photon_density(epsa,Temp)*epsa*u_bb/np.trapz(rt.BB_photon_density(epsa,Temp)*epsa,epsa)
 
 
-    j_ic2 = rt.j_ic_iso_BB_dermer(eps_s, eps, n_array, g_array, sig_T, u_bb)
+    j_ic2 = rt.j_ic_iso_BB_dermer(eps_s, eps, n_array, g_array, sig_T, u_bb)/C.energy_e
 
     # j_ic = rt.j_ic_iso_full(eps_s2, eps_s2, u_bb,Temp,p, n0, g_array)
 
