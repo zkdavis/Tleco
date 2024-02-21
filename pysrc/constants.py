@@ -14,6 +14,8 @@ mp = const.m_p.cgs.value
 sigmaT = const.sigma_T.cgs.value
 sigmaSB = const.sigma_sb.cgs.value
 kBoltz = const.k_B.cgs.value
+energy_e = me*(cLight**2)
+energy_p = mp*(cLight**2)
 
 nuConst = eCharge / (twopi * me * cLight)
 PmbConst = twopi * np.sqrt(3) * eCharge**2 / cLight
