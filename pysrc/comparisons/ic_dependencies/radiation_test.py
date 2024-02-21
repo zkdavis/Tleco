@@ -77,19 +77,19 @@ def j_ic_iso(eps_s:float,eps_array,u:typing.Callable,n_array:[float],g_array:[fl
     # assumes eps_array is logspaced
     return fcon*np.trapz(u(eps_array)*g_int_array*np.log(10)/eps_array,np.log10(eps_array))
 
-# def j_ic_iso_full(eps_s_array:[float],eps_array:[float],u:typing.Callable,n_array:[float],g_array:[float]):
-#     j_ic = np.zeros_like(eps_s_array)
-#     for i in range(len(eps_s_array)):
-#         eps_s_i = eps_s_array[i]
-#         j_ic[i] = j_ic_iso(eps_s_i,eps_array,u,n_array,g_array)
-#
-#     return j_ic
+def j_ic_iso_full_dermer(eps_s_array:[float],eps_array:[float],u:typing.Callable,n_array:[float],g_array:[float]):
+    j_ic = np.zeros_like(eps_s_array)
+    for i in range(len(eps_s_array)):
+        eps_s_i = eps_s_array[i]
+        j_ic[i] = j_ic_iso(eps_s_i,eps_array,u,n_array,g_array)
 
-# def j_ic_iso_BB(eps_s_array:[float],eps_array:[float],n_array:[float],g_array:[float],sig_T:float,u_bb:float):
-#     def ub(eps):
-#         return u_black_body(eps,sig_T,u_bb)
-#     j_ic = j_ic_iso_full(eps_s_array,eps_array,ub,n_array,g_array)
-#     return j_ic
+    return j_ic
+
+def j_ic_iso_BB_dermer(eps_s_array:[float],eps_array:[float],n_array:[float],g_array:[float],sig_T:float,u_bb:float):
+    def ub(eps):
+        return u_black_body(eps,sig_T,u_bb)
+    j_ic = j_ic_iso_full_dermer(eps_s_array,eps_array,ub,n_array,g_array)
+    return j_ic
 
 
 def F_q(q,s,p):
@@ -110,11 +110,14 @@ def j_ic_iso_pwl_BB(eps_s:float,eps_array:[float],u0,Temp,p,n0,g_array):
 
     def q_int(q_array,s):
         q_array = np.flip(q_array)
-        q_min_i = np.argmin(np.abs(q_array-0))
-        q_max_i = np.argmin(np.abs(q_array-1))
+        # q_min_i = np.argmin(np.abs(q_array-0))
+        # q_max_i = np.argmin(np.abs(q_array-1))
         fq_array = F_q(q_array,s,p)
-        integrand = (q**((p-1)/2))*fq_array
-        return np.trapz(integrand[q_min_i:q_max_i],q_array[q_min_i:q_max_i])
+        integrand = (q**((p-1)/2))*fq_array*q_array*np.log(10)
+        for i in range(len(q_array)):
+            if(q_array[i]<0 or q_array[i]>1):
+                integrand[i]=1e-200
+        return np.trapz(integrand,np.log10(q_array))
 
     q_int_array = np.zeros_like(eps_array)
     N_bb = BB_photon_density(eps_array,Temp)
@@ -127,7 +130,7 @@ def j_ic_iso_pwl_BB(eps_s:float,eps_array:[float],u0,Temp,p,n0,g_array):
         q = E1 / ( Gamma_e * (1 - E1))
         q_int_array[i] = q_int(q,s)
 
-    return fcon*np.trapz((eps_array**((p-1)/2))*N_bb*q_int_array,eps_array)
+    return fcon*np.trapz((eps_array**((p-1)/2))*N_bb*q_int_array*eps_array*np.log(10),np.log(eps_array))
 
 
 
