@@ -278,7 +278,7 @@ pub fn ic_iso_powlaw(nuout: f64, nu: &Array1<f64>, inu: &Array1<f64>, n: &Array1
         if inu[j] > 1e-200 && inu[j + 1] > 1e-200 {
             let mut l = (-((inu[j + 1] / inu[j]).ln())) / ((nu[j + 1] / nu[j]).ln());
             l = l.clamp(-8.0, 8.0);
-            let gkn = MASS_E * CLIGHT.powi(2) / (HPLANCK * nu[j + 1]);
+            let gkn = 0.25 * ENERGY_E / (HPLANCK * nu[j + 1]);
             let f1 = nuout / (4.0 * nu[j]);
             let f2 = nuout / (4.0 * nu[j + 1]);
             let g2 = g[ng - 1].min(gkn);
