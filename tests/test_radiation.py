@@ -1,8 +1,16 @@
 import numpy as np
 import pytest as pt
-
+from pysrc.comparisons import ic_bb_test
 
 class TestRadiation(object):
     def test_rad_trans_blob(self) -> None:
         assert 1 == 1
+
+    def test_ic_iso_powlaw(self) -> None:
+        num_f150_num_g150_error = 0.22399
+        numg=150
+        numf=150
+        nu_bounds = [5e8, 5e22]
+        err = ic_bb_test.ic_bb_get_error(num_f=numf,num_g=numg,nu_bounds=nu_bounds)
+        assert err <= num_f150_num_g150_error
 

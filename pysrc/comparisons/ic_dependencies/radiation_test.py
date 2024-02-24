@@ -21,16 +21,7 @@ def clamp_arr(n, min, max):
 
     return n
 
-def u_black_body(eps,sig,norm):
-    f1 = 8*np.pi*C.me*(C.cLight**2)*(eps**3)
-    lc = C.hPlanck/(C.me*C.cLight)
-    temexp = np.exp(eps/sig)
-    for i in range(len(temexp)):
-        if temexp[i] <= 1.0000001:
-            temexp[i] = 1e200
-    f = f1/((lc**3)*(temexp- 1 ))
-    f = norm*f/np.trapz(f,eps)
-    return f
+
 
 
 # Compton distribution function: see Dermer 6.75
@@ -92,10 +83,6 @@ def j_ic_iso_BB_dermer(eps_s_array:[float],eps_array:[float],n_array:[float],g_a
     return j_ic
 
 
-def F_q(q,s,p):
-    num= (2*q*np.log(q)) + (1 + q) - (2 * q**2) + (2*s*q*(1-q))
-    den = ((1 + np.sqrt((s*q)/(1 + s*q)))**(p+2))*((1 + s*q)**((p+3)/2))
-    return num/den
 
 #2.58 Blumenthal Gould 1970
 def BB_photon_density(eps_array, Temp):
