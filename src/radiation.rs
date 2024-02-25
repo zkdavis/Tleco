@@ -358,7 +358,7 @@ field is monochromatic*/
 // @return jnu: emissivity($\frac{ergs}{cm^3 Sr}$) for frequency nuout
 
     let ng = g.len();
-    let gkn = MASS_E * CLIGHT.powi(2) / (HPLANCK * nuext);
+    let gkn = 0.25*MASS_E * CLIGHT.powi(2) / (HPLANCK * nuext);
     let w = nuout / (4.0 * nuext);
     let mut jnu = 0.0;
     let mut emis = 0.0;

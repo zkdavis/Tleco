@@ -7,7 +7,7 @@ from ic_dependencies import radiation_test as rt
 def run_test(num_g,num_f):
     p = 2.2
     n0 =1
-    nu_in = 1e10
+    nu_in = 1e13
     eps_in = nu_in*C.hPlanck/C.energy_e
     u0 = 1e0
     nu_s = np.logspace(8, 25, num_f)

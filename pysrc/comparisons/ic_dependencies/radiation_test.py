@@ -86,18 +86,22 @@ def BB_photon_density(eps_array, Temp):
     f = (eps_array**2)*((np.exp(eps_array/(C.kBoltz*Temp)) - 1)**(-1))
     return fcon*f
 
-##eq 6.66 from Dermer
+##eq 6.72 from Dermer
 def j_ic_mono_pwl_electron_dermer(eps_s:float,eps_in,u0,p,n_array:[float],g_array:[float]):
-    A = np.max([g_array[0],0.5*np.sqrt(eps_s/eps_in)])
-    B = np.min([g_array[-1],0.5*(1/eps_in)])
-    CC = np.max([g_array[0],0.5*eps_s,eps_in*0.5])
-    a = (2/(p+1))*(np.power(A,-p-1) - np.power(B,-p-1))
-    b = (1/(eps_in*(p+2)))*(np.power(CC,-p-2) - np.power(g_array[-1],-p-2))
-    c = -(eps_s/(2*eps_in*(p+3)))*(np.power(A,-p-3) - np.power(B,-p-3) + np.power(CC,-p-3) - np.power(g_array[-1],-p-3))
-    ue = C.energy_e* np.trapz(n_array*g_array)
-    ke = (p-2)*ue/(C.energy_e * (np.power(g_array[0],2-p) - np.power(g_array[-1],2-p)))
-    f = ke*C.cLight*C.sigmaT*0.25*np.power(eps_s/eps_in,2)*(a + b + c)/eps_s
-    return f
+
+    fcon = 0.5*C.cLight*C.sigmaT*u0*np.power(eps_s/eps_in,2)
+    ll = np.max([eps_s/2,0.5*np.sqrt(eps_s/eps_in)])
+    gmin_i = np.argmin(np.abs(g_array - ll))
+    fg = 1/(2*g_array*eps_in)
+    for i in range(len(fg)):
+        if(fg[i]>1):
+            fg[i]=1
+    eps_hat = eps_s/(4*eps_in*np.power(g_array,2))
+    integrand = n_array*(fg - eps_hat)*np.power(g_array,-1)*np.log(10)
+    f = np.trapz(integrand[gmin_i:],np.log10(g_array[gmin_i:]))
+
+    return C.hPlanck*fcon*f/(eps_s*C.energy_e)
+
 
 
 def j_ic_mono_pwl_electron_dermer_full(eps_s_array:[float],eps_in,u0,p,n_array:[float],g_array:[float]):
