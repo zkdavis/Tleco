@@ -278,6 +278,10 @@ pub fn ic_iso_powlaw(nuout: f64, nu: &Array1<f64>, inu: &Array1<f64>, n: &Array1
         if inu[j] > 1e-200 && inu[j + 1] > 1e-200 {
             let mut l = (-((inu[j + 1] / inu[j]).ln())) / ((nu[j + 1] / nu[j]).ln());
             l = l.clamp(-8.0, 8.0);
+            /*
+             Thompson regime the maximum energy that can be scattered E_s = 4 E g^2 .
+              The Thompson regime also requires 4Eg/m c^2 <1 -> gkn = mc^2 / 4E . Thus, E_s/ 4 E = w = gkn^2
+            */
             let gkn = 0.25 * ENERGY_E / (HPLANCK * nu[j + 1]);
             let f1 = nuout / (4.0 * nu[j]);
             let f2 = nuout / (4.0 * nu[j + 1]);
@@ -358,6 +362,10 @@ field is monochromatic*/
 // @return jnu: emissivity($\frac{ergs}{cm^3 Sr}$) for frequency nuout
 
     let ng = g.len();
+    /*
+     Thompson regime the maximum energy that can be scattered E_s = 4 E g^2 .
+      The Thompson regime also requires 4Eg/m c^2 <1 -> gkn = mc^2 / 4E . Thus, E_s/ 4 E = w = gkn^2
+    */
     let gkn = 0.25*MASS_E * CLIGHT.powi(2) / (HPLANCK * nuext);
     let w = nuout / (4.0 * nuext);
     let mut jnu = 0.0;
