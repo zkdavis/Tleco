@@ -76,11 +76,7 @@ def j_ic_iso_full_dermer(eps_s_array:[float],eps_array:[float],u:typing.Callable
 
     return j_ic
 
-def j_ic_iso_BB_dermer(eps_s_array:[float],eps_array:[float],n_array:[float],g_array:[float],sig_T:float,u_bb:float):
-    def ub(eps):
-        return u_black_body(eps,sig_T,u_bb)
-    j_ic = j_ic_iso_full_dermer(eps_s_array,eps_array,ub,n_array,g_array)
-    return j_ic
+
 
 
 
@@ -89,3 +85,25 @@ def BB_photon_density(eps_array, Temp):
     fcon = ((np.pi**2)*((C.hPlanck/(2*np.pi))**3)*(C.cLight**3))**(-1)
     f = (eps_array**2)*((np.exp(eps_array/(C.kBoltz*Temp)) - 1)**(-1))
     return fcon*f
+
+##eq 6.66 from Dermer
+def j_ic_mono_pwl_electron_dermer(eps_s:float,eps_in,u0,p,n_array:[float],g_array:[float]):
+    A = np.max([g_array[0],0.5*np.sqrt(eps_s/eps_in)])
+    B = np.min([g_array[-1],0.5*(1/eps_in)])
+    CC = np.max([g_array[0],0.5*eps_s,eps_in*0.5])
+    a = (2/(p+1))*(np.power(A,-p-1) - np.power(B,-p-1))
+    b = (1/(eps_in*(p+2)))*(np.power(CC,-p-2) - np.power(g_array[-1],-p-2))
+    c = -(eps_s/(2*eps_in*(p+3)))*(np.power(A,-p-3) - np.power(B,-p-3) + np.power(CC,-p-3) - np.power(g_array[-1],-p-3))
+    ue = C.energy_e* np.trapz(n_array*g_array)
+    ke = (p-2)*ue/(C.energy_e * (np.power(g_array[0],2-p) - np.power(g_array[-1],2-p)))
+    f = ke*C.cLight*C.sigmaT*0.25*np.power(eps_s/eps_in,2)*(a + b + c)/eps_s
+    return f
+
+
+def j_ic_mono_pwl_electron_dermer_full(eps_s_array:[float],eps_in,u0,p,n_array:[float],g_array:[float]):
+    j_ic = np.zeros_like(eps_s_array)
+    for i in range(len(eps_s_array)):
+        eps_s_i = eps_s_array[i]
+        j_ic[i] = j_ic_mono_pwl_electron_dermer(eps_s_i,eps_in,u0,p,n_array,g_array)
+
+    return j_ic
