@@ -166,5 +166,5 @@ def plot_comparison_and_error():
     plt.show()
 
 if __name__ == '__main__':
-    # plot_comparison_and_error()
+    plot_comparison_and_error()
     run_convergence_test([150,300,500],[150,300,500],[5e8,5e22])
