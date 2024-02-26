@@ -5,7 +5,7 @@ import constants as C
 from ic_dependencies import radiation_test as rt
 
 def run_test(num_g,num_f):
-    p = 2.2
+    p = 2.0
     n0 =1
     nu_in = 1e13
     eps_in = nu_in*C.hPlanck/C.energy_e
@@ -21,6 +21,7 @@ def run_test(num_g,num_f):
 
 
 def run_convergence_test(num_g_values,num_f_values,nu_bounds):
+    scale_mult = 3
     errors = np.zeros((len(num_g_values), len(num_f_values)))
     errors_spec = np.zeros((len(num_g_values), len(num_f_values)),dtype=object)
     nu_array = []
@@ -42,24 +43,21 @@ def run_convergence_test(num_g_values,num_f_values,nu_bounds):
             errors_spec[i, j] = er_spec
 
     fig, ax = plt.subplots(figsize=(10, 6))
-    ax.plot(num_g_values, errors[:, -1],label='$\gamma$ convergenc', marker='o', linestyle='-', color='blue')
-    ax.plot(num_f_values, errors[-1, :], label='$\\nu$ convergenc',marker='o', linestyle='-', color='red')
-    ax.set_title('Convergence')
-    ax.set_xlabel('bin size')
-    ax.set_xlabel('Relative Error')
+    ax.plot(num_g_values, errors[:, -1],label='$\gamma$ convergence', marker='o', linestyle='-', color='blue')
+    ax.plot(num_f_values, errors[-1, :], label='$\\nu$ convergence',marker='o', linestyle='-', color='red')
+    # ax.set_title('Convergence')
+    ax.set_xlabel('bin size', fontsize=10 * scale_mult)
+    ax.set_ylabel('Relative Error', fontsize=10 * scale_mult)
 
-    ax.set_xscale("log")
-    ax.set_yscale("log")
-    scale_mult = 3
-    # plt.set_xlim([5e7, 2e23])
-    # ax2.set_ylim([1e-26, 1e-4])
+
+
     # ax.set_title('Plot Title', fontsize=18*scale_mult)
 
-    ax.tick_params(axis='both', which='major', size=12 * scale_mult, labelsize=12 * scale_mult)
-    ax.tick_params(axis='both', which='minor', size=6 * scale_mult, labelsize=6 * scale_mult)
+    ax.tick_params(axis='both', which='major', size=8 * scale_mult, labelsize=12 * scale_mult)
+    ax.tick_params(axis='both', which='minor', size=8 * scale_mult, labelsize=6 * scale_mult)
 
-    ax.legend(loc='best', fontsize=12 * scale_mult, title_fontsize=12)
-    ax.grid(True)
+    ax.legend(loc='best', fontsize=10 * scale_mult, title_fontsize=12)
+    # ax.grid(True)
     # fig.savefig("error_plot.pdf", dpi=200, bbox_inches="tight")
 
     fig2, ax2 = plt.subplots(figsize=(16, 12))
@@ -69,12 +67,11 @@ def run_convergence_test(num_g_values,num_f_values,nu_bounds):
 
     # Plot the error
     for i, ei in enumerate(errors_spec[-1, :]):
-        ax2.plot(nu_array[i], ei, label='Error |PARAMO - Dermer| at numf={}'.format(num_f_values[i]), linewidth=2 * scale_mult, linestyle=':')
+        ax2.plot(nu_array[i], ei, label='$\\frac{\\text{|PARAMO - Dermer|}}{\\text{|Dermer|}}$' + ' at numf={}'.format(num_f_values[i]), linewidth=2 * scale_mult, linestyle=':')
 
-    ax2.set_xlim([5e7, 2e23])
-    # ax2.set_ylim([1e-26, 1e-4])
-    ax2.set_xlabel('$\\nu$', fontsize=15 * scale_mult)
-    ax2.set_ylabel('$\\nu L_\\nu$ / Error', fontsize=15 * scale_mult)
+    ax2.set_xlim([2e12, 1e20])
+    ax2.set_xlabel('$\\nu$ [Hz]', fontsize=15 * scale_mult)
+    ax2.set_ylabel('Relative Error', fontsize=15 * scale_mult)
     # ax.set_title('Plot Title', fontsize=18*scale_mult)
 
     ax2.tick_params(axis='both', which='major', size=12 * scale_mult, labelsize=12 * scale_mult)
@@ -89,7 +86,7 @@ def run_convergence_test(num_g_values,num_f_values,nu_bounds):
 
 
 
-def ic_bb_get_error(num_g,num_f,nu_bounds):
+def ic_mono_get_error(num_g,num_f,nu_bounds):
     nu_s, j_ic, j_ic_para = run_test(num_g=num_g, num_f=num_f)
     nu_min_i = np.argmin(np.abs(nu_s - nu_bounds[0]))
     nu_max_i = np.argmin(np.abs(nu_s - nu_bounds[1]))
@@ -101,6 +98,7 @@ def ic_bb_get_error(num_g,num_f,nu_bounds):
     j_ic_para_filtered = j_ic_para[non_zero_indices]
     er_spec = np.abs((j_ic_para_filtered - j_ic_filtered) / j_ic_filtered)
     return np.sum(er_spec) / len(er_spec)
+
 def plot_comparison_and_error():
     num_g = 300#150
     num_f = 300#150
@@ -115,10 +113,10 @@ def plot_comparison_and_error():
     ax.plot(nu_s, j_ic_para, label='PARAMO', linewidth=2 * scale_mult, color='red')
     ax.plot(nu_s, j_ic, label='Dermer', linewidth=2 * scale_mult, linestyle='--', color='blue')
 
-    # ax.set_xlim([5e7, 2e23])
-    # ax.set_ylim([1e-26, 1e-4])
-    ax.set_xlabel('$\\nu$', fontsize=15 * scale_mult)
-    ax.set_ylabel('$\\nu L_\\nu$', fontsize=15 * scale_mult)
+    ax.set_xlim([2e12, 1e20])
+    ax.set_ylim([1e-32, 1e-27])
+    ax.set_xlabel('$\\nu$ [Hz]', fontsize=15 * scale_mult)
+    ax.set_ylabel('$j_\\nu$ [$\\frac{egs}{s \ cm^3}$]', fontsize=15 * scale_mult)
     # ax.set_title('Plot Title', fontsize=18*scale_mult)
 
     ax.tick_params(axis='both', which='major', size=12 * scale_mult, labelsize=12 * scale_mult)
@@ -126,7 +124,6 @@ def plot_comparison_and_error():
 
     ax.legend(loc='upper left', fontsize=12 * scale_mult, title_fontsize=12)
 
-    # Save to PNG with fixed size (assuming 800x600 pixels)
     # fig.savefig("test.pdf", dpi=200, bbox_inches="tight")
 
     error = np.abs((j_ic_para - j_ic) / j_ic)
@@ -136,13 +133,11 @@ def plot_comparison_and_error():
     ax2.set_xscale("log")
     ax2.set_yscale("log")
 
-    # Plot the error
-    ax2.plot(nu_s, error, label='Error PARAMO - Dermer', linewidth=2 * scale_mult, linestyle=':', color='green')
+    ax2.plot(nu_s, error, label='$\\frac{\\text{|PARAMO - Dermer|}}{\\text{|Dermer|}}$', linewidth=2 * scale_mult, linestyle=':', color='green')
 
-    ax2.set_xlim([5e7, 2e23])
-    # ax2.set_ylim([1e-26, 1e-4])
-    ax2.set_xlabel('$\\nu$', fontsize=15 * scale_mult)
-    ax2.set_ylabel('$\\nu L_\\nu$ / Error', fontsize=15 * scale_mult)
+    ax.set_xlim([2e12, 1e20])
+    ax2.set_xlabel('$\\nu$ [Hz]', fontsize=15 * scale_mult)
+    ax2.set_ylabel('$Relative Error', fontsize=15 * scale_mult)
     # ax.set_title('Plot Title', fontsize=18*scale_mult)
 
     ax2.tick_params(axis='both', which='major', size=12 * scale_mult, labelsize=12 * scale_mult)
@@ -156,4 +151,4 @@ def plot_comparison_and_error():
 
 if __name__ == '__main__':
     plot_comparison_and_error()
-    # run_convergence_test([150,300,500],[150,300,500],[5e8,5e22])
+    run_convergence_test([25,50,150,300,500,1000],[25,50,150,300,500,1000],[2e13,2.5e19])

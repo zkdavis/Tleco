@@ -88,7 +88,8 @@ def BB_photon_density(eps_array, Temp):
 
 ##eq 6.72 from Dermer
 def j_ic_mono_pwl_electron_dermer(eps_s:float,eps_in,u0,p,n_array:[float],g_array:[float]):
-
+    if(eps_in>eps_s):
+        return 0
     fcon = 0.5*C.cLight*C.sigmaT*u0*np.power(eps_s/eps_in,2)
     ll = np.max([eps_s/2,0.5*np.sqrt(eps_s/eps_in)])
     gmin_i = np.argmin(np.abs(g_array - ll))
