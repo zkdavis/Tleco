@@ -84,8 +84,6 @@ def run_convergence_test(num_g_values,num_f_values,nu_bounds):
     plt.show()
 
 
-
-
 def ic_mono_get_error(num_g,num_f,nu_bounds):
     nu_s, j_ic, j_ic_para = run_test(num_g=num_g, num_f=num_f)
     nu_min_i = np.argmin(np.abs(nu_s - nu_bounds[0]))
@@ -98,6 +96,7 @@ def ic_mono_get_error(num_g,num_f,nu_bounds):
     j_ic_para_filtered = j_ic_para[non_zero_indices]
     er_spec = np.abs((j_ic_para_filtered - j_ic_filtered) / j_ic_filtered)
     return np.sum(er_spec) / len(er_spec)
+
 
 def plot_comparison_and_error():
     num_g = 300#150

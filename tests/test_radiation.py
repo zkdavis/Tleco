@@ -15,7 +15,7 @@ class TestRadiation(object):
         assert err <= num_f150_num_g150_error
 
 
-    def test_ic_iso_powlaw(self) -> None:
+    def test_ic_iso_mono(self) -> None:
         num_f150_num_g150_error = 0.00166
         numg=150
         numf=150

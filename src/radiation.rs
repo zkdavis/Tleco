@@ -391,11 +391,11 @@ field is monochromatic*/
                 0.0
             };
 
-            jnu += emis * n[k] * g[k].powf(q) * w.powf(-q1) * CLIGHT * SIGMAT * uext / nuext;
+            jnu += emis * n[k] * g[k].powf(q) * w.powf(-q1);
         }
     }
 
-    jnu
+    jnu * CLIGHT * SIGMAT * uext / nuext
 }
 
 
