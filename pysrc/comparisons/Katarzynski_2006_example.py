@@ -1,37 +1,30 @@
+import misc_func
 import paramo as para
 import numpy as np
 import paramo.plots_code as pc
+import constants as cons
 
 ##Example injectecting a broken power law into a blob that is cooled by synchrotron and ssc
-
-cLight = 2.99792458e10
-mp = 1.67262e-24
-me = 9.1093897e-28
-sigmaT = 6.6524e-25
 ###constants
-numt = 200
+numt = 800
 numg = 80
 numf = 80
 fmax = 1e28
 fmin =1e8
 tmax = 1e18
-gmin = 1e1
+gmin = 1e0
 gmax = 1e8
 with_abs = True
-cool_withKN = False
+cool_withKN = True
 
-R = 5e14 # size of blob
-sigma = 1e-6 #blobs magnetization
-B = 0.1 #blobs magnetic field
-n0 = B**2 / (np.pi * 4 * sigma * mp * cLight**2)#particle density
-t_esc = 1e200#R/cLight #escape time
-t_inj = R / cLight #injection time
-tlc = R / cLight #light crossing time
-p1 = -2.5 #pwl indices
-p2 =p1 -1
-gcut = 1e2
-g2cut = 1e5
-
+R = 3.2e15 # size of blob
+B = 0.05 #blobs magnetic field
+uB = (B**2)/(np.pi*8) #magnetic field energy density
+C0 = 3.48e-11 #4 * sigmaT * uB / (3 * mass_e * cLight)
+t_acc = 1 / (C0 * (1e4)) #acceleration time scale
+t_esc = t_acc #escape time
+t_inj = R / cons.cLight #injection time
+tlc = R / cons.cLight #light crossing time
 tmax = tlc * 4
 
 ###arrays
@@ -46,50 +39,31 @@ ambs = np.zeros([numt, numf]) #absorbtion coefficient
 t = np.logspace(0, np.log10(tmax), numt) # logspaced time array where t_0 = 1
 f = np.logspace(np.log10(fmin), np.log10(fmax), numf) # logspaced time array where t_0 = 1
 g = np.logspace(np.log10(gmin), np.log10(gmax), numg) #logspaced lorentz factor array
-D = np.full(numg, 1e-200) # diffusion array
-gdot[0,:] = np.full(numg, 1e-200) #cooling array
+D_0 = 0.5 * np.power(g,2)/t_acc
+D = 2 * D_0 # diffusion array
+gdot[0,:] = C0 * np.power(g,2) - 4*D_0/g - g/t_acc #cooling array
 Qinj = np.zeros(numg) #injection distribution
 
 
-def broken_pwl(n0, g, p1, p2, gmin_cut, g2_cut):
-    f = np.zeros(len(g))
-    dg = np.zeros(len(g))
-    i0 = None
-    g2cut = True
-    for i in range(len(g)):
-        if i > 0:
-            dg[i] = g[i] - g[i - 1]
-        if(g[i] > gmin_cut and g[i] < g2_cut):
-            f[i] = g[i]**p1
-        elif(g[i] > g2_cut):
-            if(g2cut):
-                g2cut = False
-                i0 = i - 1
-            f[i] = f[i0] * (g[i] / g[i0])**p2
-        else:
-            f[i] = 0
-    dg[0] = dg[1]
-    f = n0 * f / sum(dg * f) #very rough normalization
-    return f
+p1 = -2.5 #pwl indices
+gcut = 1e0
+g2cut = 2e0
+n[0,:] = misc_func.power_law(1, g, p1, gcut, g2cut) #initial distribution
 
-##define fp terms
-# Qinj = broken_pwl(n0, g, p1, p2, gcut, g2cut) / t_inj
-gdot[0,:] = (4 / 3) * sigmaT * cLight * (B**2 / (8 * np.pi)) * g**2 / (me * cLight**2)
-# D = 0.5*gdot[0,:]
-n[0,:] = broken_pwl(n0, g, p1, p2, gcut, g2cut)
-uext = 1e-3
-nuout = 1e14
+
 ###time loop
 for i in range(1,len(t)):
     dt = t[i] - t[i-1]
-    n[i,:] = para.fp_findif_difu(dt, g, n[i-1,:], gdot[i-1,:], D, Qinj, t_esc, tlc)
+    n[i,:] = para.fp_findif_difu(dt, g, n[i-1,:], gdot[i-1,:], D, Qinj, 1e200, tlc)
+    print(i)
     j_s[i,:],ambs[i,:] = para.syn_emissivity_full(f, g,n[i,:], B, with_abs) #,sync and absorb
-    I_s[i,:] = para.rad_trans_blob(R, j_s[i,:], ambs[i,:])
-    j_ssc[i,:] = para.ic_iso_powlaw_full(f, I_s[i,:], g, n[i,:])
+    #I_s[i,:] = para.rad_trans_blob(R, j_s[i,:], ambs[i,:])
+    #j_ssc[i,:] = para.ic_iso_powlaw_full(f, I_s[i,:], g, n[i,:])
     # j_eic[i,:] = para.ic_iso_powlaw_full(f,I_s[i,:],g,n[i,:])
-    I_ssc[i, :] = para.rad_trans_blob(R, j_ssc[i,:], ambs[i,:])
-    dotgKN = para.rad_cool_pwl(g, f, 4 * np.pi * I_ssc[i,:] / cLight, cool_withKN)
-    gdot[i,:] = gdot[0,:] + dotgKN
+    #I_ssc[i, :] = para.rad_trans_blob(R, j_ssc[i,:], ambs[i,:])
+   # dotgKN = para.rad_cool_pwl(g, f, 4 * np.pi * I_ssc[i,:] / cons.cLight, cool_withKN)
+    gdot[i,:] = gdot[0,:]# + dotgKN
+    print(i)
 
 pc.plot_n(g, n, t)
 # pc.plot_j(f,f*(j_s),t)
