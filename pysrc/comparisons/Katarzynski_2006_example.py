@@ -17,7 +17,6 @@ def run_katarzynski():
     t_esc = t_acc  # Escape time
     t_inj = R / cons.cLight  # Injection time
     tlc = t_inj  # Light crossing time
-
     # Arrays
     t = np.logspace(0, np.log10(t_acc * 30), numt)
     t_times = np.array([0.01, 0.1, 0.5, 1, 2, 3, 5, 10, 15, 20, 40, 60, 80]) * t_acc
@@ -30,23 +29,29 @@ def run_katarzynski():
     D1 = 2 * D_0
     D2 = D1
     D3 = D1
+    D4 = D1
     gdot1 = np.zeros([numt, numg])
     gdot2 = np.zeros([numt, numg])
     gdot3 = np.zeros([numt, numg])
+    gdot4 = np.zeros([numt, numg])
     gdot1[0, :] = C0 * np.power(g, 2) - 4 * D_0 / g
     gdot2[0, :] = C0 * np.power(g, 2) - 4 * D_0 / g
     gdot3[0, :] = C0 * np.power(g, 2) - 4 * D_0 / g
+    gdot4[0, :] = C0 * np.power(g, 2) - 4 * D_0 / g
 
     # Initial particle distribution
     p, gcut1, g2cut1 = 0, 1e0, 2e0
     p, gcut2, g2cut2 = 0, 1e6, 2e6
     p, gcut3, g2cut3 = 0, 1e1, 1e6
+    p, gcut4, g2cut4 = 0, 1e0, 2e0
     n1 = np.zeros([numt, numg])
     n2 = np.zeros([numt, numg])
     n3 = np.zeros([numt, numg])
+    n4 = np.zeros([numt, numg])
     n1[0, :] = misc_func.power_law(1, g, p, gcut1, g2cut1)
     n2[0, :] = misc_func.power_law(1, g, p, gcut2, g2cut2)
     n3[0, :] = misc_func.power_law(1, g, p, gcut3, g2cut3)
+    n4[0, :] = misc_func.power_law(1, g, p, gcut4, g2cut4)
 
     # Time loop
     for i in range(1, len(t)):
@@ -54,11 +59,13 @@ def run_katarzynski():
         n1[i, :] = para.fp_findif_difu(dt, g, n1[i - 1, :], gdot1[i - 1, :], D1, np.zeros_like(D1), 1e200, tlc, False)
         n2[i, :] = para.fp_findif_difu(dt, g, n2[i - 1, :], gdot2[i - 1, :], D2, np.zeros_like(D2), 1e200, tlc, False)
         n3[i, :] = para.fp_findif_difu(dt, g, n3[i - 1, :], gdot3[i - 1, :], D3, np.zeros_like(D2), 1e200, tlc, False)
+        n4[i, :] = para.fp_findif_difu(dt, g, n4[i - 1, :], gdot4[i - 1, :], D4, (4.7e4)*n4[0, :]/t_esc, t_esc, tlc, False)
         gdot1[i, :] = gdot1[0, :]
         gdot2[i, :] = gdot2[0, :]
         gdot3[i, :] = gdot3[0, :]
+        gdot4[i, :] = gdot4[0, :]
 
-    return [n1,n2,n3],g,t,t_acc,t_times
+    return [n1,n2,n3,n4],g,t,t_acc,t_times
 
 
 def get_data(file_path):
@@ -131,6 +138,6 @@ def n_plot(n, g, t, t_acc, plt_compare=False,compare_fig=None):
 
 if __name__ == '__main__':
     ns,g,t,t_acc,t_times = run_katarzynski()
-    compare_figs = ['fig1_a','fig1_b','fig1_c']
+    compare_figs = ['fig1_a','fig1_b','fig1_c','fig2_a']
     for i,n in enumerate(ns):
         n_plot(n, g, t, t_acc,plt_compare=False, compare_fig=compare_figs[i])
