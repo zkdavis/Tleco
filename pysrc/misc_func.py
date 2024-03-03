@@ -18,7 +18,7 @@ def clamp_arr(n, min, max):
     return n
 
 
-def improved_broken_pwl(n0, g, p1, p2, gmin_cut, g2_cut):
+def broken_pwl(n0, g, p1, p2, gmin_cut, g2_cut):
     f = np.zeros(len(g))
     mask1 = (g > gmin_cut) & (g <= g2_cut)
     f[mask1] = g[mask1] ** p1
@@ -31,7 +31,7 @@ def improved_broken_pwl(n0, g, p1, p2, gmin_cut, g2_cut):
     return f
 
 
-def power_law(n0, g, p, g_min, g_max):
+def power_law(n0, g, p, g_min, g_max,normalize=False):
     """
     @func: Computes a power law function.
     @param n0: Normalization constant.
@@ -39,9 +39,12 @@ def power_law(n0, g, p, g_min, g_max):
     @param p: Power law index.
     @param g_min: Minimum value of Lorentz factor for the power law application.
     @param g_max: Maximum value of Lorentz factor for the power law application.
+    @param normalize (default=False): bool if true normalizes the distribution before returning
     @return f: Array of output values according to the power law.
     """
     f = np.zeros_like(g)
     bounds = (g >= g_min) & (g <= g_max)
-    f[bounds] = np.power(g, p)[bounds]/np.trapz(np.power(g,p)[bounds],g[bounds])
+    f[bounds] = np.power(g, p)[bounds]
+    if(normalize):
+        f = f/np.trapz(f,g)
     return f*n0

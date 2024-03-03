@@ -3,7 +3,7 @@ import matplotlib.cm as cm
 import matplotlib
 import numpy as np
 
-def plot_n(g,n,t):
+def plot_n(g,n,t,min_x=None,max_x=None,min_y=None,max_y=None):
 
     fig, ax = plt.subplots()
     ax.set_yscale('log')
@@ -19,7 +19,7 @@ def plot_n(g,n,t):
     my = None
 
     for i in range(len(t)):
-        if(i%40 !=0 and i != len(t) - 1 ):
+        if(i%5 !=0 and i != len(t) - 1 ):
             continue
         y = n[i,:]
         if(my == None):
@@ -28,9 +28,24 @@ def plot_n(g,n,t):
             my= max(y)
         pl = ax.plot(g,y,color=cmap(i))
         pls.append(pl)
-
-    ax.set_ylim(my/1e10, 2*my)
-    # ax.set_xlim(1e0, 2e6)
+    maxy = 2*my
+    miny = my/1e10
+    if(max_y is not None):
+        maxy = max_y
+    if(min_y is not None):
+        miny = min_y
+    ax.set_ylim(miny, maxy)
+    minx = None
+    maxx = None
+    if(min_x is not None):
+        minx = min_x
+        maxx = minx*(2e6)
+    if(max_x is not None):
+        maxx = max_x
+        if(minx is None):
+            minx = maxx/(2e6)
+    if(minx is not None and maxx is  not None):
+        ax.set_xlim(minx, maxx)
 
     cbticks = []
     for i in range(8):

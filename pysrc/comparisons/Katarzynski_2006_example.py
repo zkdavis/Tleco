@@ -1,74 +1,136 @@
+import numpy as np
+import matplotlib.pyplot as plt
+import matplotlib.cm as cm
+import matplotlib.colors
 import misc_func
 import paramo as para
-import numpy as np
-import paramo.plots_code as pc
 import constants as cons
 
-##Example injectecting a broken power law into a blob that is cooled by synchrotron and ssc
-###constants
-numt = 800
-numg = 80
-numf = 80
-fmax = 1e28
-fmin =1e8
-tmax = 1e18
-gmin = 1e0
-gmax = 1e8
-with_abs = True
-cool_withKN = True
+def run_katarzynski():
+    # Constants
+    numt, numg, numf = 200, 150, 80
+    fmin, fmax, tmax, gmin, gmax = 1e8, 1e28, 1e18, 1e0, 1e8
+    R, B = 3.2e15, 0.05  # Blob size and magnetic field
+    uB = (B ** 2) / (np.pi * 8)  # Magnetic field energy density
+    C0 = 3.48e-11  # Energy density constant
+    t_acc = 1 / (C0 * 1e4)  # Acceleration time scale
+    t_esc = t_acc  # Escape time
+    t_inj = R / cons.cLight  # Injection time
+    tlc = t_inj  # Light crossing time
 
-R = 3.2e15 # size of blob
-B = 0.05 #blobs magnetic field
-uB = (B**2)/(np.pi*8) #magnetic field energy density
-C0 = 3.48e-11 #4 * sigmaT * uB / (3 * mass_e * cLight)
-t_acc = 1 / (C0 * (1e4)) #acceleration time scale
-t_esc = t_acc #escape time
-t_inj = R / cons.cLight #injection time
-tlc = R / cons.cLight #light crossing time
-tmax = tlc * 4
+    # Arrays
+    t = np.logspace(0, np.log10(t_acc * 30), numt)
+    t_times = np.array([0.01, 0.1, 0.5, 1, 2, 3, 5, 10, 15, 20, 40, 60, 80]) * t_acc
+    t = np.unique(np.concatenate((t, t_times)))
+    numt = len(t)
 
-###arrays
-n = np.zeros([numt, numg]) #particle distribution dn/d\gamma
-gdot = np.zeros([numt, numg]) #fp cooling term
-j_s = np.zeros([numt, numf]) #synchrotron emissivity
-j_ssc = np.zeros([numt, numf]) #ssc emissivity
-j_eic = np.zeros([numt, numf]) #ssc emissivity
-I_s = np.zeros([numt, numf])#synchrotron Intensity
-I_ssc = np.zeros([numt, numf])#ssc Intensity
-ambs = np.zeros([numt, numf]) #absorbtion coefficient
-t = np.logspace(0, np.log10(tmax), numt) # logspaced time array where t_0 = 1
-f = np.logspace(np.log10(fmin), np.log10(fmax), numf) # logspaced time array where t_0 = 1
-g = np.logspace(np.log10(gmin), np.log10(gmax), numg) #logspaced lorentz factor array
-D_0 = 0.5 * np.power(g,2)/t_acc
-D = 2 * D_0 # diffusion array
-gdot[0,:] = C0 * np.power(g,2) - 4*D_0/g - g/t_acc #cooling array
-Qinj = np.zeros(numg) #injection distribution
+    f = np.logspace(np.log10(fmin), np.log10(fmax), numf)
+    g = np.logspace(np.log10(gmin), np.log10(gmax), numg)
+    D_0 = 0.5 * np.power(g, 2) / t_acc
+    D1 = 2 * D_0
+    D2 = D1
+    D3 = D1
+    gdot1 = np.zeros([numt, numg])
+    gdot2 = np.zeros([numt, numg])
+    gdot3 = np.zeros([numt, numg])
+    gdot1[0, :] = C0 * np.power(g, 2) - 4 * D_0 / g
+    gdot2[0, :] = C0 * np.power(g, 2) - 4 * D_0 / g
+    gdot3[0, :] = C0 * np.power(g, 2) - 4 * D_0 / g
+
+    # Initial particle distribution
+    p, gcut1, g2cut1 = 0, 1e0, 2e0
+    p, gcut2, g2cut2 = 0, 1e6, 2e6
+    p, gcut3, g2cut3 = 0, 1e1, 1e6
+    n1 = np.zeros([numt, numg])
+    n2 = np.zeros([numt, numg])
+    n3 = np.zeros([numt, numg])
+    n1[0, :] = misc_func.power_law(1, g, p, gcut1, g2cut1)
+    n2[0, :] = misc_func.power_law(1, g, p, gcut2, g2cut2)
+    n3[0, :] = misc_func.power_law(1, g, p, gcut3, g2cut3)
+
+    # Time loop
+    for i in range(1, len(t)):
+        dt = t[i] - t[i - 1]
+        n1[i, :] = para.fp_findif_difu(dt, g, n1[i - 1, :], gdot1[i - 1, :], D1, np.zeros_like(D1), 1e200, tlc, False)
+        n2[i, :] = para.fp_findif_difu(dt, g, n2[i - 1, :], gdot2[i - 1, :], D2, np.zeros_like(D2), 1e200, tlc, False)
+        n3[i, :] = para.fp_findif_difu(dt, g, n3[i - 1, :], gdot3[i - 1, :], D3, np.zeros_like(D2), 1e200, tlc, False)
+        gdot1[i, :] = gdot1[0, :]
+        gdot2[i, :] = gdot2[0, :]
+        gdot3[i, :] = gdot3[0, :]
+
+    return [n1,n2,n3],g,t,t_acc,t_times
 
 
-p1 = -2.5 #pwl indices
-gcut = 1e0
-g2cut = 2e0
-n[0,:] = misc_func.power_law(1, g, p1, gcut, g2cut) #initial distribution
+def get_data(file_path):
+    x, y = [], []
+    with open(file_path, 'r') as f:
+        for line in f.readlines():
+            parts = line.split(", ")
+            x.append(float(parts[0]))
+            y.append(float(parts[1]))
+    return x, y
 
 
-###time loop
-for i in range(1,len(t)):
-    dt = t[i] - t[i-1]
-    n[i,:] = para.fp_findif_difu(dt, g, n[i-1,:], gdot[i-1,:], D, Qinj, 1e200, tlc)
-    print(i)
-    j_s[i,:],ambs[i,:] = para.syn_emissivity_full(f, g,n[i,:], B, with_abs) #,sync and absorb
-    #I_s[i,:] = para.rad_trans_blob(R, j_s[i,:], ambs[i,:])
-    #j_ssc[i,:] = para.ic_iso_powlaw_full(f, I_s[i,:], g, n[i,:])
-    # j_eic[i,:] = para.ic_iso_powlaw_full(f,I_s[i,:],g,n[i,:])
-    #I_ssc[i, :] = para.rad_trans_blob(R, j_ssc[i,:], ambs[i,:])
-   # dotgKN = para.rad_cool_pwl(g, f, 4 * np.pi * I_ssc[i,:] / cons.cLight, cool_withKN)
-    gdot[i,:] = gdot[0,:]# + dotgKN
-    print(i)
+def n_plot(n, g, t, t_acc, plt_compare=False,compare_fig=None):
+    fig, ax = plt.subplots()
+    ax.set_yscale('log')
+    ax.set_xscale('log')
 
-pc.plot_n(g, n, t)
-# pc.plot_j(f,f*(j_s),t)
-pc.plot_j(f, f * (j_s + j_ssc + j_eic), t)
-# pc.plot_I(f,np.pi * 4* (I_s)*f,t)
-pc.plot_I(f, np.pi * 4 * (I_ssc + I_s) * f, t)
-# pc.plot_n(g,gdot[0:1,:],t[0:1])
-# pc.plot_n(g,gdot,t)
+    if compare_fig:
+        if plt_compare:
+            data_x, data_y = get_data(f"compare_data/katarzynski_digitized_plots/{compare_fig}")
+            ax.plot(data_x, data_y,lw=3, marker='d', color='black', label='Comparison Data')
+        if (compare_fig == 'fig1_a'):
+            ax.set_ylim(1e-12, 1e1)
+            ax.set_xlim(1e0, 1e7)
+        elif (compare_fig == 'fig1_b'):
+            ax.set_ylim(1e-10, 1e3)
+            ax.set_xlim(1e0, 1e7)
+        elif (compare_fig == 'fig1_c'):
+            ax.set_ylim(1e-9, 1e4)
+            ax.set_xlim(1e0, 1e7)
+        elif (compare_fig == 'fig2_a'):
+            ax.set_ylim(1e-10, 1e5)
+            ax.set_xlim(1e0, 1e7)
+        elif (compare_fig == 'fig2_b'):
+            ax.set_ylim(1e-8, 1e7)
+            ax.set_xlim(1e0, 1e7)
+        elif (compare_fig == 'fig2_c'):
+            ax.set_ylim(1e-8, 1e7)
+            ax.set_xlim(1e0, 1e7)
+        elif (compare_fig == 'fig3_a'):
+            ax.set_ylim(1e-12, 1e2)
+            ax.set_xlim(1e0, 1e8)
+        else:
+            ax.set_ylim(1e-9, 1e4)
+            ax.set_xlim(1e0, 1e7)
+
+
+    norm = matplotlib.colors.LogNorm(vmin=t[0], vmax=t[-1])
+    cmap = cm.rainbow
+    sm = plt.cm.ScalarMappable(cmap=cmap, norm=norm)
+    sm.set_array([])
+
+    plot_times = np.abs(np.subtract.outer(t, t_times)).argmin(0)
+    for i in np.append(0,plot_times):
+        ax.plot(g, n[i, :], color=cmap(norm(t[i])), lw=2, label=f'Time = {t[i]/t_acc:.2f} t_acc' if i % 20 == 0 else "")
+
+    cbar = plt.colorbar(sm, ax=ax)
+    cbar.set_label('Time [s]', rotation=270, labelpad=15)
+    ax.set_xlabel(r"Lorentz Factor $\gamma$")
+    ax.set_ylabel(r"Particle Distribution $n(\gamma)$ [cm$^{-3}$]")
+    ax.set_title('Particle Distribution over Time')
+
+
+
+    plt.tight_layout()
+    plt.show()
+
+
+
+
+if __name__ == '__main__':
+    ns,g,t,t_acc,t_times = run_katarzynski()
+    compare_figs = ['fig1_a','fig1_b','fig1_c']
+    for i,n in enumerate(ns):
+        n_plot(n, g, t, t_acc,plt_compare=False, compare_fig=compare_figs[i])

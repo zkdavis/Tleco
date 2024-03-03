@@ -1,6 +1,7 @@
 import paramo as para
 import numpy as np
 import paramo.plots_code as pc
+import misc_func as mf
 
 ##Example injectecting a broken power law into a blob that is cooled by synchrotron and ssc
 
@@ -9,8 +10,8 @@ mp = 1.67262e-24
 me = 9.1093897e-28
 sigmaT = 6.6524e-25
 ###constants
-numt = 200
-numg = 80
+numt = 30
+numg = 60
 numf = 80
 fmax = 1e28
 fmin =1e8
@@ -51,32 +52,11 @@ gdot[0,:] = np.full(numg, 1e-200) #cooling array
 Qinj = np.zeros(numg) #injection distribution
 
 
-def broken_pwl(n0, g, p1, p2, gmin_cut, g2_cut):
-    f = np.zeros(len(g))
-    dg = np.zeros(len(g))
-    i0 = None
-    g2cut = True
-    for i in range(len(g)):
-        if i > 0:
-            dg[i] = g[i] - g[i - 1]
-        if(g[i] > gmin_cut and g[i] < g2_cut):
-            f[i] = g[i]**p1
-        elif(g[i] > g2_cut):
-            if(g2cut):
-                g2cut = False
-                i0 = i - 1
-            f[i] = f[i0] * (g[i] / g[i0])**p2
-        else:
-            f[i] = 0
-    dg[0] = dg[1]
-    f = n0 * f / sum(dg * f) #very rough normalization
-    return f
-
 ##define fp terms
 # Qinj = broken_pwl(n0, g, p1, p2, gcut, g2cut) / t_inj
 gdot[0,:] = (4 / 3) * sigmaT * cLight * (B**2 / (8 * np.pi)) * g**2 / (me * cLight**2)
 # D = 0.5*gdot[0,:]
-n[0,:] = broken_pwl(n0, g, p1, p2, gcut, g2cut)
+n[0,:] = mf.broken_pwl(n0, g, p1, p2, gcut, g2cut)
 uext = 1e-3
 nuout = 1e14
 ###time loop
