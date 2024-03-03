@@ -206,7 +206,6 @@ pub fn arma_qromb(chi: f64, q: f64, lga: f64, lgb: f64, rma_func: Option<fn(f64,
     let mut qromb = 0.0;
 
     h[0] = 1.0;
-
     for j in 0..JMAX {
         arma_trapzd(chi, q, lga, lgb, &mut s[j], j + 1, rma_func);
         if j >= K {
@@ -247,10 +246,15 @@ pub fn arma_trapzd(chi: f64,q: f64,lga: f64,lgb: f64,s: &mut f64,n: usize, rma_f
     let func = rma_func.unwrap_or_else(|| rma_new);
 
     if n == 1 {
-        let ega = lga.exp();
+        let mut ega = lga.exp();
         let egb = lgb.exp();
+        //todo create a better fix for this problem when ega==1
+        if ega - 1.0 <= 1e-10{
+            ega = 1.0 + 1e-10
+        }
         let fa = ega.powf(-q) * func(chi, ega) * (q + 1.0 + ega.powi(2) / (ega.powi(2) - 1.0));
         let fb = egb.powf(-q) * func(chi, egb) * (q + 1.0 + egb.powi(2) / (egb.powi(2) - 1.0));
+
         *s = 0.5 * (lgb - lga) * (fa + fb);
     } else {
         let it = 2usize.pow(n as u32 - 2);
@@ -262,7 +266,6 @@ pub fn arma_trapzd(chi: f64,q: f64,lga: f64,lgb: f64,s: &mut f64,n: usize, rma_f
             fsum += eg.powf(-q) * func(chi, eg) * (q + 1.0 + eg.powi(2) / (eg.powi(2) - 1.0));
             lg += del;
         }
-
         *s = 0.5 * (*s + del * fsum);
     }
 }
