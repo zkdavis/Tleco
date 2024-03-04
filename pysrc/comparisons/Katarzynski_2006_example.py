@@ -13,7 +13,7 @@ import os
 os.environ["RUST_BACKTRACE"] = "1"
 
 # Constants
-with_abs, cool_withKN = True, False
+with_abs, cool_withKN = True, True
 num_t, numg, numf = 80, 100, 150
 fmin, fmax, gmin, gmax = 1e8, 1e29, 1e0, 1e9
 R, B = 3.2e15, 0.05  # Blob size and magnetic field
@@ -27,7 +27,7 @@ t_acc7 = tlc # Acceleration time scale
 t_esc = t_acc  # Escape time
 t_times1 = np.array([0.01, 0.1, 0.5, 1, 2, 3, 5, 10, 15, 20, 40, 60, 80]) * t_acc
 t_times2 = np.array([0.01, 0.1, 0.5, 1, 2, 3, 5, 10, 15, 20, 40, 60, 80]) * t_acc7
-t_times3 = np.array([0.01, 0.1, 0.5, 1, 2, 3, 5, 10]) * t_acc7
+t_times3 = np.array([0.01, 0.1, 0.5, 1, 2,3,4.5, 5, 7]) * t_acc7
 t_times = t_times3
 tmax = t_times3[-1]
 def run_katarzynski():
@@ -111,15 +111,15 @@ def run_katarzynski():
         I_ssc7[i, :] = para.rad_trans_blob(R, j_ssc7[i, :], np.zeros_like(ambs7[i, :]))
 
 
-        dotgKN7 = np.zeros_like(g)
-        for j,gi in enumerate(g):
-            vmax_kn = 3 * cons.energy_e / (4 * cons.hPlanck * gi)
-            vmax = min([vmax_kn,fmax])
-            vmax_i = np.argmin(np.abs(f-vmax))
-            urad = (np.pi * 4 / cons.cLight)*np.trapz(I_s7[i,:vmax_i],f[:vmax_i])
-            dotgKN7[j] = (4 * cons.sigmaT* urad * np.power(gi,2)/ (3 * cons.me * cons.cLight))
+        # dotgKN7 = np.zeros_like(g)
+        # for j,gi in enumerate(g):
+        #     vmax_kn = 3 * cons.energy_e / (4 * cons.hPlanck * gi)
+        #     vmax = min([vmax_kn,fmax])
+        #     vmax_i = np.argmin(np.abs(f-vmax))
+        #     urad = (np.pi * 4 / cons.cLight)*np.trapz(I_s7[i,:vmax_i],f[:vmax_i])
+        #     dotgKN7[j] = (4 * cons.sigmaT* urad * np.power(gi,2)/ (3 * cons.me * cons.cLight))
 
-        # dotgKN7 = para.rad_cool_pwl(g, f, 4 * np.pi * I_s7[i, :] / cons.cLight, cool_withKN)
+        dotgKN7 = para.rad_cool_pwl(g, f, 4 * np.pi * I_s7[i, :] / cons.cLight, cool_withKN)
 
         gdot1[i, :] = gdot1[0, :]
         gdot2[i, :] = gdot2[0, :]
@@ -210,19 +210,18 @@ def nuFnu_plots(Im, nu, t, compare_fig):
     sm.set_array([])
 
     t_normalized = t / t_acc
-    specified_times = [0.01, 0.1, 0.5, 1, 2, 3, 5, 10, 15, 20, 40, 60, 80]
-    indices_to_plot = [np.argmin(np.abs(t_normalized - time)) for time in specified_times]
+    specified_times = t_times
+    plot_times = np.abs(np.subtract.outer(t, t_times)).argmin(0)
 
     max_luminosity = None
     dop = 21
-    for i, time in enumerate(t_normalized):
-        if i not in indices_to_plot and i not in (0, len(t) - 1) and i % 10 != 0:
-            continue
-        tau_gg = OptDepth.readmodel(model='finke2022')
-        ETeV = cf.erg2ev(cons.hPlanck * nu * dop) / 1e12
-        atten = np.exp(-1. * tau_gg.opt_depth(z, ETeV))
+    tau_gg = OptDepth.readmodel(model='kneiske')
+    ETeV = cf.erg2ev(cons.hPlanck * nu * dop) / 1e12
+    atten = np.exp(-1. * tau_gg.opt_depth(z, ETeV))
+    plot_times = np.abs(np.subtract.outer(t, t_times)).argmin(0)
+    for i in np.append(0, plot_times):
         nu_Fnu = atten*(dop**4)*nu*(Im[i,:])* (4 * np.pi * (R**2))/ (4 * np.pi * (4.32e26)**2)
-        ax.plot(dop*nu, nu_Fnu, color=cmap(norm(t[i])), label=f'Time = {time:.2f} t_acc')
+        ax.plot(dop*nu, nu_Fnu, color=cmap(norm(t[i])), label=f'Time = {t[i]:.2f} t_acc')
 
         # Update the maximum luminosity value
         current_max = np.max(nu_Fnu)
