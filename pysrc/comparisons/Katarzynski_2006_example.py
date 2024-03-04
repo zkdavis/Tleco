@@ -3,26 +3,34 @@ import matplotlib.pyplot as plt
 import matplotlib.cm as cm
 import matplotlib.colors
 import misc_func
+import conversion_funcs as cf
 import paramo as para
 import constants as cons
+from tqdm import tqdm
+from ebltable.tau_from_model import OptDepth
+
+import os
+os.environ["RUST_BACKTRACE"] = "1"
 
 # Constants
-with_abs, cool_withKN = True, True
-num_t, numg, numf = 150, 300, 300
-fmin, fmax, tmax, gmin, gmax = 1e8, 1e28, 1e18, 1e0, 1e8
+with_abs, cool_withKN = True, False
+num_t, numg, numf = 80, 100, 300
+fmin, fmax, gmin, gmax = 1e8, 1e28, 1e0, 1e8
 R, B = 3.2e15, 0.05  # Blob size and magnetic field
 uB = (B ** 2) / (np.pi * 8)  # Magnetic field energy density
+z = 0.034 #mrk 501 redshift
 C0 = 3.48e-11  # Energy density constant
 t_inj = R / cons.cLight  # Injection time
 tlc = t_inj  # Light crossing time
 t_acc = 1 / (C0 * 1e4)  # Acceleration time scale
 t_acc7 = tlc # Acceleration time scale
 t_esc = t_acc  # Escape time
-t_times = np.array([0.01, 0.1, 0.5, 1, 2, 3, 5, 10, 15, 20, 40, 60, 80]) * t_acc
+t_times = np.array([0.01, 0.1, 0.5, 1, 2, 3, 5, 10, 15, 20, 40, 60, 80]) * t_acc7
+tmax = t_times[-1]
 def run_katarzynski():
 
     # Arrays
-    t = np.logspace(0, np.log10(t_acc * 30), num_t)
+    t = np.logspace(0, np.log10(tmax), num_t)
     t = np.unique(np.concatenate((t, t_times)))
     numt = len(t)
 
@@ -81,6 +89,7 @@ def run_katarzynski():
     I_s7 = np.zeros([numt, numf])  # synchrotron Intensity
     I_ssc7 = np.zeros([numt, numf])  # ssc Intensity
 
+    progress_bar = tqdm(total=numt - 1, desc='Manual progress')
     # Time loop
     for i in range(1, len(t)):
         dt = t[i] - t[i - 1]
@@ -94,10 +103,20 @@ def run_katarzynski():
 
         j_s7[i, :], ambs7[i, :] = para.syn_emissivity_full(f, g, n7[i, :], B, with_abs)  # ,sync and absorb
         I_s7[i, :] = para.rad_trans_blob(R, j_s7[i, :], ambs7[i, :])
+        I_s7[i,:] = 0.5*I_s7[i,:]
         j_ssc7[i, :] = para.ic_iso_powlaw_full(f, I_s7[i, :], g, n7[i, :])
-        I_ssc7[i, :] = para.rad_trans_blob(R, j_ssc7[i, :], ambs7[i, :])
+        I_ssc7[i, :] = para.rad_trans_blob(R, j_ssc7[i, :], np.zeros_like(ambs7[i, :]))
 
-        dotgKN7 = para.rad_cool_pwl(g, f, 4 * np.pi * I_s7[i, :] / cons.cLight, cool_withKN)
+
+        dotgKN7 = np.zeros_like(g)
+        for j,gi in enumerate(g):
+            vmax_kn = 3 * cons.energy_e / (4 * cons.hPlanck * gi)
+            vmax = min([vmax_kn,fmax])
+            vmax_i = np.argmin(np.abs(f-vmax))
+            urad = (np.pi * 4 / cons.cLight)*np.trapz(I_s7[i,:vmax_i],f[:vmax_i])
+            dotgKN7[j] = (4 * cons.sigmaT* urad * np.power(gi,2)/ (3 * cons.me * cons.cLight))
+
+        # dotgKN7 = para.rad_cool_pwl(g, f, 4 * np.pi * I_s7[i, :] / cons.cLight, cool_withKN)
 
         gdot1[i, :] = gdot1[0, :]
         gdot2[i, :] = gdot2[0, :]
@@ -106,6 +125,8 @@ def run_katarzynski():
         gdot5[i, :] = gdot5[0, :]
         gdot6[i, :] = gdot6[0, :]
         gdot7[i, :] = gdot7[0, :] + dotgKN7
+
+        progress_bar.update(1)
 
     return [n1,n2,n3,n4,n5,n6,n7],g,[I_s7],[I_ssc7],f,t,t_times
 
@@ -194,15 +215,24 @@ def nuFnu_plots(Im, nu, t, compare_fig):
     for i, time in enumerate(t_normalized):
         if i not in indices_to_plot and i not in (0, len(t) - 1) and i % 10 != 0:
             continue
-        nu_Fnu = (dop**4)*nu*(Im[i,:])* (4 * np.pi * (R**2))/ (4 * np.pi * (4.32e26)**2)
+        tau_gg = OptDepth.readmodel(model='finke2022')
+        ETeV = cf.erg2ev(cons.hPlanck * dop* nu) / 1e12
+        atten = np.exp(-1. * tau_gg.opt_depth(z, ETeV))
+        nu_Fnu = atten*(dop**4)*nu*(Im[i,:])* (4 * np.pi * (R**2))/ (4 * np.pi * (4.32e26)**2)
         ax.plot(dop*nu, nu_Fnu, color=cmap(norm(t[i])), label=f'Time = {time:.2f} t_acc')
 
         # Update the maximum luminosity value
         current_max = np.max(nu_Fnu)
         max_luminosity = current_max if max_luminosity is None else max(max_luminosity, current_max)
-
-    ax.set_xlim(nu[0], nu[-1])
-    ax.set_ylim(1e-16, 1e-5) if compare_fig == 'fig3_b' else ax.set_ylim(1e-16, 2 * max_luminosity)
+    if compare_fig == 'fig3_b':
+        ax.set_xlim(1e10, 1e22)
+        ax.set_ylim(1e-16, 1e-5)
+    elif compare_fig == 'fig3_c':
+        ax.set_xlim(1e18, 1e29)
+        ax.set_ylim(1e-16, 1e-6)
+    else:
+        ax.set_xlim(nu[0], nu[-1])
+        ax.set_ylim(1e-16, 2 * max_luminosity)
     ax.set_xlabel(r"$\nu$ [Hz]", fontsize=18)
     ax.set_ylabel(r"$\nu F_{\nu}$ $[\frac{erg}{s cm^{2}}]$", fontsize=18)
 

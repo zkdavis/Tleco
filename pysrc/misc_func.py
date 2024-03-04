@@ -48,3 +48,5 @@ def power_law(n0, g, p, g_min, g_max,normalize=False):
     if(normalize):
         f = f/np.trapz(f,g)
     return f*n0
+
+

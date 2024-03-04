@@ -522,7 +522,6 @@ pub fn rad_cool_pwl(gg: &Array1<f64>, freqs: &Array1<f64>, uu: &Array1<f64>, wit
                 } else {
                     uxi[[k, j]] * xi[[k, j]] * pinteg(xi_rat, uind, 1e-6)
                 };
-
                 usum += ueval;
             }
         }
