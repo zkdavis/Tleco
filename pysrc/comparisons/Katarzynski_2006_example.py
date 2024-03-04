@@ -14,8 +14,8 @@ os.environ["RUST_BACKTRACE"] = "1"
 
 # Constants
 with_abs, cool_withKN = True, False
-num_t, numg, numf = 80, 100, 300
-fmin, fmax, gmin, gmax = 1e8, 1e28, 1e0, 1e8
+num_t, numg, numf = 80, 100, 150
+fmin, fmax, gmin, gmax = 1e8, 1e29, 1e0, 1e9
 R, B = 3.2e15, 0.05  # Blob size and magnetic field
 uB = (B ** 2) / (np.pi * 8)  # Magnetic field energy density
 z = 0.034 #mrk 501 redshift
@@ -25,8 +25,11 @@ tlc = t_inj  # Light crossing time
 t_acc = 1 / (C0 * 1e4)  # Acceleration time scale
 t_acc7 = tlc # Acceleration time scale
 t_esc = t_acc  # Escape time
-t_times = np.array([0.01, 0.1, 0.5, 1, 2, 3, 5, 10, 15, 20, 40, 60, 80]) * t_acc7
-tmax = t_times[-1]
+t_times1 = np.array([0.01, 0.1, 0.5, 1, 2, 3, 5, 10, 15, 20, 40, 60, 80]) * t_acc
+t_times2 = np.array([0.01, 0.1, 0.5, 1, 2, 3, 5, 10, 15, 20, 40, 60, 80]) * t_acc7
+t_times3 = np.array([0.01, 0.1, 0.5, 1, 2, 3, 5, 10]) * t_acc7
+t_times = t_times3
+tmax = t_times3[-1]
 def run_katarzynski():
 
     # Arrays
@@ -216,7 +219,7 @@ def nuFnu_plots(Im, nu, t, compare_fig):
         if i not in indices_to_plot and i not in (0, len(t) - 1) and i % 10 != 0:
             continue
         tau_gg = OptDepth.readmodel(model='finke2022')
-        ETeV = cf.erg2ev(cons.hPlanck * dop* nu) / 1e12
+        ETeV = cf.erg2ev(cons.hPlanck * nu * dop) / 1e12
         atten = np.exp(-1. * tau_gg.opt_depth(z, ETeV))
         nu_Fnu = atten*(dop**4)*nu*(Im[i,:])* (4 * np.pi * (R**2))/ (4 * np.pi * (4.32e26)**2)
         ax.plot(dop*nu, nu_Fnu, color=cmap(norm(t[i])), label=f'Time = {time:.2f} t_acc')
