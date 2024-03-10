@@ -9,12 +9,10 @@ import constants as cons
 from tqdm import tqdm
 from ebltable.tau_from_model import OptDepth
 
-import os
-os.environ["RUST_BACKTRACE"] = "1"
 
 # Constants
 with_abs, cool_withKN = True, True
-num_t, numg, numf = 100, 100, 100
+num_t, numg, numf = 300, 300, 300
 fmin, fmax, gmin, gmax = 1e8, 1e29, 1e0, 1e9
 R, B = 3.2e15, 0.05  # Blob size and magnetic field
 uB = (B ** 2) / (np.pi * 8)  # Magnetic field energy density
