@@ -446,12 +446,31 @@ pub fn rad_trans_blob(R: f64, jnu: &Array1<f64>, anu: &Array1<f64>) -> Array1<f6
     let mut inu = Array1::<f64>::zeros(nf);
 
     for j in 0..nf {
-        inu[j] = 2.0 * R * jnu[j] * opt_depth_blob(R, anu[j],);
+        inu[j] = R * jnu[j] * opt_depth_blob(R, anu[j],) / 3.0;
     }
 
     inu
 }
 
+pub fn rad_trans_slab(R: f64, jnu: &Array1<f64>, anu: &Array1<f64>) -> Array1<f64> {
+    let nf = jnu.len();
+    let mut inu = Array1::<f64>::zeros(nf);
+
+    for j in 0..nf {
+        inu[j] = R * jnu[j] * opt_depth_slab(R, anu[j],);
+    }
+
+    inu
+}
+
+fn opt_depth_slab(r: f64, absor: f64,) -> f64 {
+    let tau = f64::max(1e-100, r * absor);
+    if tau <= 1e-10 {
+        1.0
+    } else {
+        (1.0 - (-tau).exp()) / tau
+    }
+}
 
 pub fn opt_depth_blob(r: f64, absor: f64) -> f64 {
     let tau = f64::max(1e-100, 2.0 * r * absor);

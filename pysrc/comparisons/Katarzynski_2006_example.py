@@ -14,7 +14,7 @@ os.environ["RUST_BACKTRACE"] = "1"
 
 # Constants
 with_abs, cool_withKN = True, True
-num_t, numg, numf = 80, 100, 150
+num_t, numg, numf = 100, 100, 100
 fmin, fmax, gmin, gmax = 1e8, 1e29, 1e0, 1e9
 R, B = 3.2e15, 0.05  # Blob size and magnetic field
 uB = (B ** 2) / (np.pi * 8)  # Magnetic field energy density
@@ -29,7 +29,7 @@ t_times1 = np.array([0.01, 0.1, 0.5, 1, 2, 3, 5, 10, 15, 20, 40, 60, 80]) * t_ac
 t_times2 = np.array([0.01, 0.1, 0.5, 1, 2, 3, 5, 10, 15, 20, 40, 60, 80]) * t_acc7
 t_times3 = np.array([0.01, 0.1, 0.5, 1, 2,3,4.5, 5, 7]) * t_acc7
 t_times = t_times3
-tmax = t_times3[-1]
+tmax = t_times[-1]
 def run_katarzynski():
 
     # Arrays
@@ -105,21 +105,20 @@ def run_katarzynski():
         n7[i, :] = para.fp_findif_difu(dt, g, n7[i - 1, :], gdot7[i - 1, :], D7, np.zeros_like(D7), 1e200, tlc, False)
 
         j_s7[i, :], ambs7[i, :] = para.syn_emissivity_full(f, g, n7[i, :], B, with_abs)  # ,sync and absorb
-        I_s7[i, :] = para.rad_trans_blob(R, j_s7[i, :], ambs7[i, :])
-        I_s7[i,:] = 0.5*I_s7[i,:]
+        I_s7[i, :] = para.rad_trans_slab(R, j_s7[i, :], ambs7[i, :])
         j_ssc7[i, :] = para.ic_iso_powlaw_full(f, I_s7[i, :], g, n7[i, :])
         I_ssc7[i, :] = para.rad_trans_blob(R, j_ssc7[i, :], np.zeros_like(ambs7[i, :]))
 
+        #katarzynski has a custom cooling approximation
+        dotgKN7 = np.zeros_like(g)
+        for j,gi in enumerate(g):
+            vmax_kn = 3 * cons.energy_e / (4 * cons.hPlanck * gi)
+            vmax = min([vmax_kn,fmax])
+            vmax_i = np.argmin(np.abs(f-vmax))
+            urad = (np.pi * 4 / cons.cLight)*np.trapz(I_s7[i,:vmax_i],f[:vmax_i])
+            dotgKN7[j] = (4 * cons.sigmaT* urad * np.power(gi,2)/ (3 * cons.me * cons.cLight))
 
-        # dotgKN7 = np.zeros_like(g)
-        # for j,gi in enumerate(g):
-        #     vmax_kn = 3 * cons.energy_e / (4 * cons.hPlanck * gi)
-        #     vmax = min([vmax_kn,fmax])
-        #     vmax_i = np.argmin(np.abs(f-vmax))
-        #     urad = (np.pi * 4 / cons.cLight)*np.trapz(I_s7[i,:vmax_i],f[:vmax_i])
-        #     dotgKN7[j] = (4 * cons.sigmaT* urad * np.power(gi,2)/ (3 * cons.me * cons.cLight))
-
-        dotgKN7 = para.rad_cool_pwl(g, f, 4 * np.pi * I_s7[i, :] / cons.cLight, cool_withKN)
+        # dotgKN7 = para.rad_cool_pwl(g, f, 4 * np.pi * I_s7[i, :] / cons.cLight, cool_withKN)
 
         gdot1[i, :] = gdot1[0, :]
         gdot2[i, :] = gdot2[0, :]
@@ -256,8 +255,10 @@ if __name__ == '__main__':
     compare_figs = ['fig1_a','fig1_b','fig1_c','fig2_a','fig2_b','fig2_c','fig3_a']
     compare_nfnu_figs = ['fig3_b','fig3_c']
     for i,n in enumerate(ns):
-        if(i<6):
-            continue
+        if(compare_figs[i]=='fig3_a'):
+            print("here")
+        # if(i<6):
+        #     continue
         n_plot(n, g, t,plt_compare=False, compare_fig=compare_figs[i])
         if(i>5):
             Is = I_syns[i - 6]
