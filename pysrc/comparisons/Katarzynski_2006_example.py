@@ -92,7 +92,7 @@ def run_katarzynski():
     I_s7 = np.zeros([numt, numf])  # synchrotron Intensity
     I_ssc7 = np.zeros([numt, numf])  # ssc Intensity
 
-    progress_bar = tqdm(total=numt - 1, desc='Manual progress')
+    progress_bar = tqdm(total=numt - 1, desc='Progress')
     # Time loop
     for i in range(1, len(t)):
         dt = t[i] - t[i - 1]
