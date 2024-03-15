@@ -1,7 +1,7 @@
 # Functions
 ### Rust Functions
 
-- **ic_iso_monochrome** - computes the emissivity($\frac{ergs}{cm^3 Sr}$) at frequency nuout(Hz) from inverse Compton (IC) scattering in an isotropic photon field assuming the photonfield is monochromatic [see in [src/radiation.rs:L353](https://github.com/zkdavis/PyParamo/blob/master/src/radiation.rs#L353)]
+- **ic_iso_monochroe** - computes the emissivity($\frac{ergs}{cm^3 Sr}$) at frequency nuout(Hz) from inverse Compton (IC) scattering in an isotropic photon field assuming the photonfield is monochromatic [see in [src/radiation.rs:L353](https://github.com/zkdavis/PyParamo/blob/master/src/radiation.rs#L353)]
   - **Parameters:**
     - `nuout` (*f64*): frequency(Hz) in the comoving frame to compute emission at.
     - `uext` (*f64*): energy density($\frac{ergs}{cm^-3}$) of the external photon field in the comoving frame.
