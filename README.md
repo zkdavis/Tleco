@@ -1,35 +1,44 @@
+# Functions
+### Rust Functions
 
-### syn_emissivity(freq: f64, gamma_bins: &Array1<f64>, n_distrib: &Array1<f64>, b_field: f64,  rma_func: Option<fn(f64, f64) :
-#### Description of function: computes the emissivity($\frac{ergs}{cm^3 Sr}$) at frequency nuout(Hz) from inverse Compton (IC) scattering in an isotropic photon field assuming the photon
-field is monochromatic
+- **ic_iso_monochrome** - computes the emissivity($\frac{ergs}{cm^3 Sr}$) at frequency nuout(Hz) from inverse Compton (IC) scattering in an isotropic photon field assuming the photonfield is monochromatic [see in [src/radiation.rs:L353](https://github.com/zkdavis/PyParamo/blob/master/src/radiation.rs#L353)]
+  - **Parameters:**
+    - `nuout` (*f64*): frequency(Hz) in the comoving frame to compute emission at.
+    - `uext` (*f64*): energy density($\frac{ergs}{cm^-3}$) of the external photon field in the comoving frame.
+    - `nuext` (*f64*): frequency(Hz) in the comoving frame of the external photon field.
+    - `n` (*&Array1<f64>*): particle distribution as function of lorentz factor
+    - `g` (*&Array1<f64>*): Lorentz factor grid
+  - **Returns:**
+    - `jnu` (*f64*): emissivity($\frac{ergs}{cm^3 Sr}$) for frequency nuout
 
-#### Parameters:
-None
 
-#### Returns:
-- None
-### ic_iso_monochrome_full(freqs: &Array1<f64>, uext: f64, nuext: f64, n: &Array1<f64>, g: &Array1<f64>) :
-#### Description of function: computes the emissivity($\frac{ergs}{cm^3 Sr}$) from inverse Compton (IC) scattering in an isotropic photon field assuming the photon
-field is monochromatic
+- **ic_iso_monochrome_full** - computes the emissivity($\frac{ergs}{cm^3 Sr}$) from inverse Compton (IC) scattering in an isotropic photon field assuming the photonfield is monochromatic [see in [src/radiation.rs:L403](https://github.com/zkdavis/PyParamo/blob/master/src/radiation.rs#L403)]
+  - **Parameters:**
+    - `freqs` (*&Array1<f64>*): frequency(Hz) array in the comoving frame to compute emission over.
+    - `uext` (*f64*): energy density($\frac{ergs}{cm^-3}$) of the external photon field in the comoving frame.
+    - `nuext` (*f64*): frequency(Hz) in the comoving frame of the external photon field.
+    - `n` (*&Array1<f64>*): particle distribution as function of lorentz factor
+    - `g` (*&Array1<f64>*): Lorentz factor grid
+  - **Returns:**
+    - `jic` (*Array1<f64>*): emissivity($\frac{ergs}{cm^3 Sr}$) for frequency range freq
 
-#### Parameters:
-None
 
-#### Returns:
-- None
-### rad_trans_blob(R: f64, jnu: &Array1<f64>, anu: &Array1<f64>) :
-#### Description of function: computes the radiative inverse Compton cooling ($\frac{\partial g}{\partial t}$ [$s^{-1}$]) from isotropic photon field uu($\frac{ergs}{cm^-3}$)
+- **rad_cool_pwl** - computes the radiative inverse Compton cooling ($\frac{\partial g}{\partial t}$ [$s^{-1}$]) from isotropic photon field uu($\frac{ergs}{cm^-3}$) [see in [src/radiation.rs:L480](https://github.com/zkdavis/PyParamo/blob/master/src/radiation.rs#L480)]
+  - **Parameters:**
+    - `gg` (*&Array1<f64>*): Lorentz factor grid
+    - `freqs` (*&Array1<f64>*): frequency(Hz) array in the comoving frame.
+    - `uu` (*&Array1<f64>*): energy density($\frac{ergs}{cm^-3}$) of photon field in the comoving frame for every frequency in freqs.
+    - `with_kn` (*bool*): bool that will include Klein Nishina affects to the cross section when true.
+  - **Returns:**
+    - `dotg` (*Array1<f64>*): radiative cooling ($\frac{\partial g}{\partial t}$ [$s^{-1}$])
 
-#### Parameters:
-None
 
-#### Returns:
-- None
-### rad_cool_mono(gg: &Array1<f64>, nu0: f64, u0: f64, with_kn: bool) :
-#### Description of function: computes the radiative inverse Compton cooling ($\frac{\partial g}{\partial t}$ [$s^{-1}$]) from isotropic monotonic photon field u0($\frac{ergs}{cm^-3}$)
+- **rad_cool_mono** - computes the radiative inverse Compton cooling ($\frac{\partial g}{\partial t}$ [$s^{-1}$]) from isotropic monotonic photon field u0($\frac{ergs}{cm^-3}$) [see in [src/radiation.rs:L536](https://github.com/zkdavis/PyParamo/blob/master/src/radiation.rs#L536)]
+  - **Parameters:**
+    - `gg` (*&Array1<f64>*): Lorentz factor grid
+    - `nu0` (*f64*): frequency(Hz) in the comoving frame of the photon field u0.
+    - `u0` (*f64*): energy density($\frac{ergs}{cm^-3}$) of photon field in the comoving frame.
+    - `with_kn` (*bool*): bool that will include Klein Nishina affects to the cross section when true.
+  - **Returns:**
+    - `dotg` (*Array1<f64>*): radiative cooling ($\frac{\partial g}{\partial t}$ [$s^{-1}$])
 
-#### Parameters:
-None
-
-#### Returns:
-- None

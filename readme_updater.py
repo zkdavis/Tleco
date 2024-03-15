@@ -1,169 +1,248 @@
-import re
 import os
+import re
 import fnmatch
 
-# Regex patterns to identify different parts of the comment
-func_regex = re.compile(r'/\*\s*@func: (.*?)\*/', re.DOTALL)
-param_regex = re.compile(r'//\s*@param (.*?): (.*?)$', re.MULTILINE)
-return_regex = re.compile(r'//\s*@return (.*?): (.*?)$', re.MULTILINE)
-comment_block_regex = re.compile(
-    r'/\*\s*@func: (.*?)\*/(.*?)//\s*@return (.*?): (.*?)$',
-    re.DOTALL | re.MULTILINE
-)
 
-def load_gitignore_patterns(repo_path):
-    """
-    Loads and returns a list of patterns from the .gitignore file.
-    """
-    ignore_patterns = ['.git', '.gitignore', '.github', 'README.md', 'Cargo.lock', 'Cargo.toml', 'pyproject.toml', 'requirements.txt']
-    gitignore_path = os.path.join(repo_path, '.gitignore')
+def remove_existing_functions_section(readme_path):
+    with open(readme_path, 'r+', encoding='utf-8') as readme:
+        content = readme.readlines()
 
-    try:
-        with open(gitignore_path, 'r') as file:
-            file_patterns = file.readlines()
-        file_patterns = [pattern.strip() for pattern in file_patterns if pattern.strip() != '' and not pattern.startswith('#')]
-        ignore_patterns.extend(file_patterns)
-    except FileNotFoundError:
-        print(f"No .gitignore file found in {repo_path}. Continuing with default ignore patterns.")
+    start_of_functions = None
+    end_of_functions = None
+    for i, line in enumerate(content):
+        if line.startswith('# Functions'):
+            start_of_functions = i
+        if start_of_functions is not None and "# " in line and "Functions" not in line and i > start_of_functions:
+            end_of_functions = i
+            break
+    if(end_of_functions is None):
+        end_of_functions = len(content)
 
+    if start_of_functions is not None and end_of_functions is not None:
+        # Remove the section in place
+        del content[start_of_functions:end_of_functions]
+
+    # Rewrite the file with the modified content
+    with open(readme_path, 'w', encoding='utf-8') as readme:
+        readme.writelines(content)
+
+
+def parse_gitignore(gitignore_path):
+    with open(gitignore_path, 'r') as file:
+        ignore_patterns = file.read().splitlines()
     return ignore_patterns
 
-def should_ignore_path(path, ignore_patterns, repo_path):
-    """
-    Determines if the given path matches any of the .gitignore patterns.
-    """
-    normalized_path = os.path.relpath(path, start=repo_path)
-    for pattern in ignore_patterns:
-        if fnmatch.fnmatch(normalized_path, pattern) or fnmatch.fnmatch(os.path.basename(path), pattern)  or normalized_path in pattern:
+
+def should_ignore(path, ignore_patterns):
+    path = path.split("/")
+    paths = []
+    paths.extend(path)
+    ret = False
+    for path in paths:
+        ret = any(fnmatch.fnmatch(path, pattern) for pattern in ignore_patterns) or any(path in pattern for pattern in ignore_patterns)
+        if(ret == True):
             return True
-    return False
-
-def detect_language(file_path):
-    """
-    Detects the programming language of a file based on its file extension.
-
-    """
-    _, file_extension = os.path.splitext(file_path)
-    if file_extension == '.py':
-        return "python"
-    elif file_extension == '.rs':
-        return "rust"
-    else:
-        return None
-
-def extract_function_signatures_and_comments(file_content, language):
-    """
-    Extracts function signatures and their associated following comment blocks for Python and Rust.
-    """
-    if language == "python":
-        pattern = re.compile(
-            r'(def \w+\(.*?\))\s*:\s*(?:(?:#.*\n)|(?:\"\"\".*?\"\"\"|\'\'\'.*?\'\'\'))*\s*(/\*\s*@func:.*?\*/)',
-            re.DOTALL
-        )
-    elif language == "rust":
-        pattern = re.compile(
-            r'(fn \w+\(.*?\))\s*->\s*.*?{\s*.*?(/\*\s*@func:.*?\*/)',
-            re.DOTALL
-        )
-    else:
-        raise ValueError(f"Unsupported language: {language}")
-
-    matches = pattern.findall(file_content)
-    formatted_matches = [(match[0], match[-1]) for match in matches]
-    return formatted_matches
-
-def format_comment_block(function_signature, comment_block):
-    """
-    Formats a comment block for README inclusion, fixing issues with parameter details and styling.
-    """
-
-    func_desc_match = re.search(r'/\*\s*@func: (.*?)\*/', comment_block, re.DOTALL)
-    func_description = func_desc_match.group(1).strip() if func_desc_match else "No description available."
+    return ret
 
 
-    if "->" in function_signature:
-        func_name_params, return_type = function_signature.rsplit("->", 1)
-        return_type = return_type.replace("{", "").strip()
-        return_type = return_type[:-1].strip() if return_type.endswith(":") else return_type
-    else:
-        func_name_params = function_signature
-        return_type = "None"
-
-    param_start = func_name_params.find("(") + 1
-    param_end = func_name_params.rfind(")")
-    params_raw = func_name_params[param_start:param_end]
-    params = params_raw.split(",")
-
-    formatted_signature = f"### {func_name_params} -> {return_type} :\n"
-
-    formatted_details = f"#### Description of function: {func_description}\n\n#### Parameters:\n"
-    if params_raw.strip():
-        for param in params:
-            param = param.strip()
-            formatted_details += f"- **{param}**\n"
-    else:
-        formatted_details += "None\n"
-
-    if return_type:
-        formatted_details += f"\n#### Returns:\n- **{return_type}**\n"
-
-    return formatted_signature + formatted_details
-
-
-def find_and_format_comments_in_file(file_path):
-    """
-    Finds and formats comments within a given file.
-    """
-    language = detect_language(file_path)
-    if language is None:
-        print(f"Unsupported file type: {file_path}")
-        return ""
-
+def extract_functions_from_file(file_path):
     with open(file_path, 'r') as file:
-        print(f"processing file {file_path}")
-        content = file.read()
-        formatted_comments = ''
-        function_blocks = extract_function_signatures_and_comments(content,language)
+        lines = file.readlines()
 
-        for signature, comment in function_blocks:
-            formatted_comments += format_comment_block(signature, comment)
+    functions = []
+    for i, line in enumerate(lines):
+        function_match_rust = re.match(r'^\s*pub fn\s+[^\(]+\([^)]*\)\s*->\s*[^{]+{', line)
+        function_match_python = re.match(r'^\s*def\s+[^\(]+\([^)]*\)\s*:', line)
+        if function_match_rust or function_match_python:
+            function_signature = line.strip()
+            comment_block = ""
+            # Determine the start and end of the comment block based on the file type
+            comment_start = '/*' if function_match_rust else '"""'
+            comment_end = '*/' if function_match_rust else '"""'
 
-        return formatted_comments
+            # Check for comment block after the function
+            if i + 1 < len(lines) and lines[i + 1].strip().startswith(comment_start):
+                in_comment_block = False
+                for j in range(i + 1, len(lines)):
+                    comment_line = lines[j].strip()
+                    if comment_line.startswith(comment_start):
+                        in_comment_block = True
+                        comment_line = comment_line[len(comment_start):].strip()  # Remove the start token
+                    if in_comment_block:
+                        comment_block += comment_line + "\n"
+                    if comment_line.endswith(comment_end):
+                        if in_comment_block:  # Found the end of the comment block
+                            comment_block = comment_block[:-(len(comment_end) + 1)].strip()  # Remove the end token
+                            break
 
-def scan_repository_for_comments(repo_path, ignore_patterns):
+            # Extract @func:, @param, and @return information
+            if "@func:" in comment_block:
+                func_desc_pattern = re.compile(r'@func: (.*?)(?=(@param|@return|$))', re.DOTALL)
+                param_desc_pattern = re.compile(r'@param (.*?): (.*?)(?=(@param|@return|$))', re.DOTALL)
+                return_desc_pattern = re.compile(r'@return\s+(.*?):\s+(.*?)(?=(@param|@func|$))', re.DOTALL)
+
+                # Extracting descriptions
+                func_desc_match = re.search(func_desc_pattern, comment_block)
+                param_desc_matches = re.finditer(param_desc_pattern, comment_block)
+                return_desc_match = re.search(return_desc_pattern, comment_block)
+
+                # Formatting descriptions
+                func_description = func_desc_match.group(1).strip() if func_desc_match else ""
+                param_descriptions = {m.group(1).strip(): m.group(2).strip() for m in param_desc_matches}
+                return_description = f"{return_desc_match.group(1).strip()}: {return_desc_match.group(2).strip()}" if return_desc_match else ""
+
+                func_description = func_description.replace("\n","")
+                for keys in param_descriptions.keys():
+                    param_descriptions[keys] = param_descriptions[keys].replace("\n","")
+                return_description = return_description.replace("\n","")
+
+                description = {"description": func_description, "params": param_descriptions, "return": return_description}
+
+                if function_match_rust:
+                    functions.append((i, function_signature, description))
+                elif function_match_python:
+                    functions.append((i, function_signature, description))
+
+    return functions
+
+
+def document_functions(repo_path, ignore_patterns=[]):
+    gitignore_path = os.path.join(repo_path, '.gitignore')
+    if os.path.exists(gitignore_path):
+        ignore_patterns.extend(parse_gitignore(gitignore_path))
+
+    rust_functions = []
+    python_functions = []
+
+    for root, dirs, files in os.walk(repo_path):
+        for file in files:
+            file_path = os.path.join(root, file)
+            relative_path = os.path.relpath(file_path, repo_path)
+
+            if should_ignore(relative_path, ignore_patterns):
+                continue
+
+            if file.endswith('.rs') or file.endswith('.py'):
+                functions = extract_functions_from_file(file_path)
+                for line_number, function_signature, comment_block in functions:
+                    if file.endswith('.rs'):
+                        rust_functions.append((relative_path, line_number, function_signature, comment_block))
+                    else:
+                        python_functions.append((relative_path, line_number, function_signature, comment_block))
+
+    python_functions.sort(key=lambda x: x[2])  # Sort Python functions alphabetically by signature
+    return python_functions, rust_functions
+# def parse_function_signature(signature, language):
+#     """
+#     Parses the function signature to extract parameter names, types, and optionality,
+#     ensuring the return type is not included with parameters.
+#     """
+#     params = []
+#     if language == "rust":
+#         # Rust: Adjust to stop before "-> ReturnType"
+#         param_section = re.search(r'fn\s+\w+\((.*?)\)\s*->', signature)
+#         if param_section:
+#             param_pattern = re.compile(r'(\w+)\s*:\s*([^,]+)')
+#             params = param_pattern.findall(param_section.group(1))
+#             params = [(name, ty.strip(), 'optional' if 'Option<' in ty else '') for name, ty in params]
+#     elif language == "python":
+#         # Python: Adjust to correctly parse default values and type hints.
+#         # Split signature at the first colon (assumes no colons in default values for simplicity).
+#         param_section = signature.split("):", 1)[0] + ")"
+#         param_pattern = re.compile(r'(\w+)\s*:\s*([^=,]+)(\s*=\s*.+)?')
+#         matches = param_pattern.findall(param_section)
+#         params = [(name, ty.strip(), 'optional' if default else '') for name, ty, default in matches]
+#
+#     return params
+
+def parse_function_signature(signature, language):
     """
-    Scans the repository for comments to format and compile.
+    Parses the function signature to extract parameter names, types, optionality,
+    and return type.
     """
-    comments = ''
-    for subdir, dirs, files in os.walk(repo_path):
-        dirs[:] = [d for d in dirs if not should_ignore_path(os.path.join(subdir, d), ignore_patterns, repo_path)]
-        for filename in files:
-            file_path = os.path.join(subdir, filename)
-            if not should_ignore_path(file_path, ignore_patterns, repo_path):
-                comments += find_and_format_comments_in_file(file_path)
-    return comments
+    params = []
+    return_type = ""
+    if language == "rust":
+        # Extracting parameters and return type for Rust
+        param_section = re.search(r'fn\s+\w+\((.*?)\)\s*->\s*(.*)', signature)
+        if param_section:
+            param_pattern = re.compile(r'(\w+)\s*:\s*([^,]+)')
+            params = param_pattern.findall(param_section.group(1))
+            params = [(name, ty.strip(), 'optional' if 'Option<' in ty else '') for name, ty in params]
+            return_type = param_section.group(2).strip()  # Capture the return type
+    elif language == "python":
+        # Adjust for Python if using type hints for return types
+        # This is a simplistic approach; adjust as necessary for your codebase
+        param_section = signature.split("):", 1)
+        if len(param_section) > 1 and "->" in param_section[1]:
+            params_str, return_type_str = param_section
+            param_pattern = re.compile(r'(\w+)\s*:\s*([^=,]+)(\s*=\s*.+)?')
+            params = param_pattern.findall(params_str + ")")
+            params = [(name, ty.strip(), 'optional' if default else '') for name, ty, default in params]
+            return_type = return_type_str.split("->", 1)[1].strip()
 
-def append_comments_to_readme(comments, readme_path):
-    """
-    Appends comments to the README.md file.
-    """
-    if not comments.strip():
-        print("No new comments to append.")
-        return
+    return params, return_type
 
-    try:
-        with open(readme_path, 'r+', encoding='utf-8') as readme:
-            readme_content = readme.read()
-            if comments.strip() not in readme_content:
-                readme.write('\n' + comments.strip())
-    except FileNotFoundError:
-        print(f"README.md file not found at path: {readme_path}")
-    except Exception as e:
-        print(f"An error occurred: {e}")
+def write_functions_to_readme(rust_functions, python_functions, readme_path, repo_base_url):
+    with open(readme_path, 'a') as readme:
+        readme.write('# Functions\n')
+
+        if rust_functions:
+            readme.write('### Rust Functions\n')
+            for file_path, line_number, function_signature, description in rust_functions:
+                readme.write('\n')
+                function_name = re.search(r'fn\s+(\w+)', function_signature).group(1)
+                location_url = f'{repo_base_url}/blob/master/{file_path}#L{line_number}'
+                location_text = f'[{file_path}:L{line_number}]({location_url})'
+                readme.write(f'- **{function_name}** - {description["description"]} [see in {location_text}]\n')
+                readme.write('  - **Parameters:**\n')
+                params, return_type = parse_function_signature(function_signature, "rust")
+                for param, param_type, optional in params:
+                    optional_str = " (optional)" if optional else ""
+                    readme.write(f'    - `{param}` (*{param_type}*{optional_str}): {description["params"].get(param, "No description")}\n')
+
+                # Adjust return section to match parameters format
+                if description["return"]:
+                    # Assuming the return description is in the format "variable: description"
+                    return_type = return_type.replace("{","").replace(" ","")
+                    return_var, return_desc = description["return"].split(":", 1)
+                    readme.write('  - **Returns:**\n')
+                    readme.write(f'    - `{return_var}` (*{return_type}*): {return_desc.strip()}\n')
+                readme.write('\n')
+
+        # Similar adjustment for Python functions
+        if python_functions:
+            readme.write('### Python Functions\n')
+            for file_path, line_number, function_signature, description in python_functions:
+                readme.write('\n')
+                function_name = re.search(r'def\s+(\w+)', function_signature).group(1)
+                location_url = f'{repo_base_url}/blob/master/{file_path}#L{line_number}'
+                location_text = f'[{file_path}:L{line_number}]({location_url})'
+                readme.write(f'- **{function_name}** - {description["description"]} [see in {location_text}]\n')
+                readme.write('  - **Parameters:**\n')
+                params, return_type = parse_function_signature(function_signature, "python")
+                for param, param_type, optional in params:
+                    optional_str = "(optional)" if optional else ""
+                    readme.write(f'    - `{param}` (*{param_type}*{optional_str}): {description["params"].get(param, "No description")}\n')
+
+                # Adjust return section to match parameters format for Python functions
+                if description["return"]:
+                    return_var, return_desc = description["return"].split(":", 1)
+                    readme.write('  - **Returns:**\n')
+                    readme.write(f'    - `{return_var}` (*{return_type}*): {return_desc.strip()}\n')
+                readme.write('\n')
+
 
 if __name__ == "__main__":
+    # Example usage
     repo_path = './'
-    ignore_patterns = load_gitignore_patterns(repo_path)
-    comments = scan_repository_for_comments(repo_path, ignore_patterns)
     readme_path = os.path.join(repo_path, 'README.md')
-    append_comments_to_readme(comments, readme_path)
+    repo_base_url = 'https://github.com/zkdavis/PyParamo'
+    script_filename = os.path.basename(__file__)
+    extra_ignores = ['.git', '.gitignore', '.github', 'README.md',
+                       'Cargo.lock', 'Cargo.toml', 'pyproject.toml',
+                       'requirements.txt', 'distribs_unfinished', script_filename]
+    remove_existing_functions_section(readme_path)
+    pyf, rsf = document_functions(repo_path, extra_ignores)
+    write_functions_to_readme(rsf,pyf, readme_path,repo_base_url)
+
