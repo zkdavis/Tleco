@@ -206,7 +206,6 @@ pub fn arma_qromb(chi: f64, q: f64, lga: f64, lgb: f64, rma_func: Option<fn(f64,
     let mut qromb = 0.0;
 
     h[0] = 1.0;
-
     for j in 0..JMAX {
         arma_trapzd(chi, q, lga, lgb, &mut s[j], j + 1, rma_func);
         if j >= K {
@@ -247,10 +246,15 @@ pub fn arma_trapzd(chi: f64,q: f64,lga: f64,lgb: f64,s: &mut f64,n: usize, rma_f
     let func = rma_func.unwrap_or_else(|| rma_new);
 
     if n == 1 {
-        let ega = lga.exp();
+        let mut ega = lga.exp();
         let egb = lgb.exp();
+        //todo create a better fix for this problem when ega==1
+        if ega - 1.0 <= 1e-10{
+            ega = 1.0 + 1e-10
+        }
         let fa = ega.powf(-q) * func(chi, ega) * (q + 1.0 + ega.powi(2) / (ega.powi(2) - 1.0));
         let fb = egb.powf(-q) * func(chi, egb) * (q + 1.0 + egb.powi(2) / (egb.powi(2) - 1.0));
+
         *s = 0.5 * (lgb - lga) * (fa + fb);
     } else {
         let it = 2usize.pow(n as u32 - 2);
@@ -262,7 +266,6 @@ pub fn arma_trapzd(chi: f64,q: f64,lga: f64,lgb: f64,s: &mut f64,n: usize, rma_f
             fsum += eg.powf(-q) * func(chi, eg) * (q + 1.0 + eg.powi(2) / (eg.powi(2) - 1.0));
             lg += del;
         }
-
         *s = 0.5 * (*s + del * fsum);
     }
 }
@@ -443,12 +446,31 @@ pub fn rad_trans_blob(R: f64, jnu: &Array1<f64>, anu: &Array1<f64>) -> Array1<f6
     let mut inu = Array1::<f64>::zeros(nf);
 
     for j in 0..nf {
-        inu[j] = 2.0 * R * jnu[j] * opt_depth_blob(R, anu[j],);
+        inu[j] = R * jnu[j] * opt_depth_blob(R, anu[j],) / 3.0;
     }
 
     inu
 }
 
+pub fn rad_trans_slab(R: f64, jnu: &Array1<f64>, anu: &Array1<f64>) -> Array1<f64> {
+    let nf = jnu.len();
+    let mut inu = Array1::<f64>::zeros(nf);
+
+    for j in 0..nf {
+        inu[j] = R * jnu[j] * opt_depth_slab(R, anu[j],);
+    }
+
+    inu
+}
+
+fn opt_depth_slab(r: f64, absor: f64,) -> f64 {
+    let tau = f64::max(1e-100, r * absor);
+    if tau <= 1e-10 {
+        1.0
+    } else {
+        (1.0 - (-tau).exp()) / tau
+    }
+}
 
 pub fn opt_depth_blob(r: f64, absor: f64) -> f64 {
     let tau = f64::max(1e-100, 2.0 * r * absor);
@@ -519,7 +541,6 @@ pub fn rad_cool_pwl(gg: &Array1<f64>, freqs: &Array1<f64>, uu: &Array1<f64>, wit
                 } else {
                     uxi[[k, j]] * xi[[k, j]] * pinteg(xi_rat, uind, 1e-6)
                 };
-
                 usum += ueval;
             }
         }
