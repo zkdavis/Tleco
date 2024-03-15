@@ -14,7 +14,7 @@ import sys
 
 # Constants
 with_abs, cool_withKN = True, True
-num_t0, numg, numf = 200, 200, 200
+num_t0, numg, numf = 150, 180, 150
 fmin, fmax, gmin, gmax = 1e7, 1e30, 1e0, 1e10
 R, B = 3.2e15, 0.05  # Blob size and magnetic field
 R2, B2 = 1e15, 0.11  # Blob size and magnetic field
@@ -168,10 +168,10 @@ def run_katarzynski():
             dt3 = t3[i] - t3[i - 1]
             n8[i, :] = para.fp_findif_difu(dt3, g, n8[i - 1, :], gdot8[i - 1, :], D8, Q_inj8, t_esc8, t_acc8, False)
 
-            j_s8[i, :], ambs8[i, :] = para.syn_emissivity_full(f, g, n8[i, :], B, with_abs)  # ,sync and absorb
-            I_s8[i, :] = para.rad_trans_slab(R, j_s8[i, :], ambs8[i, :])
+            j_s8[i, :], ambs8[i, :] = para.syn_emissivity_full(f, g, n8[i, :], B2, with_abs)  # ,sync and absorb
+            I_s8[i, :] = para.rad_trans_slab(R2, j_s8[i, :], ambs8[i, :])
             j_ssc8[i, :] = para.ic_iso_powlaw_full(f, I_s8[i, :], g, n8[i, :])
-            I_ssc8[i, :] = para.rad_trans_slab(R, j_ssc8[i, :], ambs8[i, :])
+            I_ssc8[i, :] = para.rad_trans_slab(R2, j_ssc8[i, :], ambs8[i, :])
 
             # katarzynski has a custom cooling approximation
             # dotgKN8 = np.zeros_like(g)
