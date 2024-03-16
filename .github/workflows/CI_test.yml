@@ -26,7 +26,6 @@ on:
         type: environment
         required: false
 
-on:
   push:
     branches:
       - main
