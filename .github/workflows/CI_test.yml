@@ -25,18 +25,18 @@ on:
         description: 'Environment to run tests against'
         type: environment
         required: false
-
-  push:
+#  push:
+#    branches:
+#      - main
+#      - master
+#    tags:
+#      - '*'
+  pull_request:
     branches:
       - main
       - master
     tags:
       - '*'
-  pull_request:
-  workflow_dispatch:
-
-permissions:
-  contents: read
 
 jobs:
   linux:
