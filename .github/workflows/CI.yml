@@ -3,7 +3,7 @@
 #
 #    maturin generate-ci github
 #
-name: CI_TEST2
+name: CI
 
 on:
   workflow_dispatch:
@@ -32,14 +32,70 @@ on:
       - continuous_integration
     tags:
       - '*'
-  pull_request:
-    branches:
-      - main
-      - master
-    tags:
-      - '*'
+#  pull_request:
+#    branches:
+#      - main
+#      - master
+#    tags:
+#      - '*'
+
+permissions:
+  contents: read
 
 jobs:
+
+  version-update:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          fetch-depth: 0 # Necessary to get all history for version calculation
+
+      - name: Set up Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: '3.x'
+
+      - name: Install Dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install semver
+
+      - name: Update Version
+        run: |
+          # Extract current version
+          VERSION=$(cat VERSION.txt)
+          echo "Current version: $VERSION"
+
+          # Increment version
+          NEW_VERSION=$(python -c "import semver; print(semver.bump_patch('$VERSION'))")
+          echo $NEW_VERSION > VERSION.txt
+          echo "Updated version: $NEW_VERSION"
+
+      - name: Commit and Push
+        run: |
+          git config --global user.email "action@github.com"
+          git config --global user.name "GitHub Action"
+          git add VERSION.txt
+          git commit -m "Increment version to $NEW_VERSION"
+          git push
+
+  update-readme:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          fetch-depth: 0  # Fetch all history for all tags and branches
+
+      - name: Set up Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: '3.x'
+
+      - name: Run the script
+        run: |
+          python readme_updater.py
+
   linux:
     runs-on: ubuntu-latest
     strategy:
@@ -126,7 +182,7 @@ jobs:
   release:
     name: Release
     runs-on: ubuntu-latest
-    #if: "startsWith(github.ref, 'refs/tags/')"
+    if: "startsWith(github.ref, 'refs/tags/')"
     needs: [linux, windows, macos, sdist]
     steps:
       - uses: actions/download-artifact@v3
