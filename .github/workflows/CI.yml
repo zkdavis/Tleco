@@ -74,10 +74,12 @@ jobs:
       - name: Update pyproject.toml Version
         run: |
           python -c "import toml; \
-                     pyproject = 'pyproject.toml'; \
-                     data = toml.load(pyproject); \
-                     data['tool']['poetry']['version'] = '${{ env.NEW_VERSION }}'; \
-                     with open(pyproject, 'w') as f: toml.dump(data, f)"
+          with open('pyproject.toml', 'r+', encoding='utf-8') as pyproject: \
+              data = toml.load(pyproject); \
+              data['tool']['poetry']['version'] = '${{ env.NEW_VERSION }}'; \
+              pyproject.seek(0); \
+              toml.dump(data, pyproject); \
+              pyproject.truncate();"
           git add pyproject.toml
 
       - name: Commit and Push Version Update
