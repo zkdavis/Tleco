@@ -43,12 +43,12 @@ permissions:
   contents: read
 
 jobs:
-
   version-update:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
         with:
+          token: ${{ secrets.GITHUB_TOKEN }} # Use the built-in GITHUB_TOKEN for authentication
           fetch-depth: 0 # Necessary to get all history for version calculation
 
       - name: Set up Python
@@ -69,8 +69,8 @@ jobs:
 
           # Increment version
           NEW_VERSION=$(python -c "import semver; print(semver.bump_patch('$VERSION'))")
-          echo $NEW_VERSION > VERSION.txt
           echo "Updated version: $NEW_VERSION"
+          echo $NEW_VERSION > VERSION.txt
 
       - name: Commit and Push
         run: |
@@ -78,7 +78,9 @@ jobs:
           git config --global user.name "GitHub Action"
           git add VERSION.txt
           git commit -m "Increment version to $NEW_VERSION"
-          git push
+          git push origin ${{ github.ref_name }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   update-readme:
     runs-on: ubuntu-latest
