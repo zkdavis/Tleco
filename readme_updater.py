@@ -1,6 +1,10 @@
 import os
 import re
 import fnmatch
+import subprocess
+import toml
+
+
 
 
 def remove_existing_functions_section(readme_path):
@@ -19,10 +23,8 @@ def remove_existing_functions_section(readme_path):
         end_of_functions = len(content)
 
     if start_of_functions is not None and end_of_functions is not None:
-        # Remove the section in place
         del content[start_of_functions:end_of_functions]
 
-    # Rewrite the file with the modified content
     with open(readme_path, 'w', encoding='utf-8') as readme:
         readme.writelines(content)
 
@@ -56,11 +58,9 @@ def extract_functions_from_file(file_path):
         if function_match_rust or function_match_python:
             function_signature = line.strip()
             comment_block = ""
-            # Determine the start and end of the comment block based on the file type
             comment_start = '/*' if function_match_rust else '"""'
             comment_end = '*/' if function_match_rust else '"""'
 
-            # Check for comment block after the function
             if i + 1 < len(lines) and lines[i + 1].strip().startswith(comment_start):
                 in_comment_block = False
                 for j in range(i + 1, len(lines)):
@@ -75,18 +75,15 @@ def extract_functions_from_file(file_path):
                             comment_block = comment_block[:-(len(comment_end) + 1)].strip()  # Remove the end token
                             break
 
-            # Extract @func:, @param, and @return information
             if "@func:" in comment_block:
                 func_desc_pattern = re.compile(r'@func: (.*?)(?=(@param|@return|$))', re.DOTALL)
                 param_desc_pattern = re.compile(r'@param (.*?): (.*?)(?=(@param|@return|$))', re.DOTALL)
                 return_desc_pattern = re.compile(r'@return\s+(.*?):\s+(.*?)(?=(@param|@func|$))', re.DOTALL)
 
-                # Extracting descriptions
                 func_desc_match = re.search(func_desc_pattern, comment_block)
                 param_desc_matches = re.finditer(param_desc_pattern, comment_block)
                 return_desc_match = re.search(return_desc_pattern, comment_block)
 
-                # Formatting descriptions
                 func_description = func_desc_match.group(1).strip() if func_desc_match else ""
                 param_descriptions = {m.group(1).strip(): m.group(2).strip() for m in param_desc_matches}
                 return_description = f"{return_desc_match.group(1).strip()}: {return_desc_match.group(2).strip()}" if return_desc_match else ""
@@ -132,28 +129,7 @@ def document_functions(repo_path, ignore_patterns=[]):
 
     python_functions.sort(key=lambda x: x[2])  # Sort Python functions alphabetically by signature
     return python_functions, rust_functions
-# def parse_function_signature(signature, language):
-#     """
-#     Parses the function signature to extract parameter names, types, and optionality,
-#     ensuring the return type is not included with parameters.
-#     """
-#     params = []
-#     if language == "rust":
-#         # Rust: Adjust to stop before "-> ReturnType"
-#         param_section = re.search(r'fn\s+\w+\((.*?)\)\s*->', signature)
-#         if param_section:
-#             param_pattern = re.compile(r'(\w+)\s*:\s*([^,]+)')
-#             params = param_pattern.findall(param_section.group(1))
-#             params = [(name, ty.strip(), 'optional' if 'Option<' in ty else '') for name, ty in params]
-#     elif language == "python":
-#         # Python: Adjust to correctly parse default values and type hints.
-#         # Split signature at the first colon (assumes no colons in default values for simplicity).
-#         param_section = signature.split("):", 1)[0] + ")"
-#         param_pattern = re.compile(r'(\w+)\s*:\s*([^=,]+)(\s*=\s*.+)?')
-#         matches = param_pattern.findall(param_section)
-#         params = [(name, ty.strip(), 'optional' if default else '') for name, ty, default in matches]
-#
-#     return params
+
 
 def parse_function_signature(signature, language):
     """
@@ -163,7 +139,6 @@ def parse_function_signature(signature, language):
     params = []
     return_type = ""
     if language == "rust":
-        # Extracting parameters and return type for Rust
         param_section = re.search(r'fn\s+\w+\((.*?)\)\s*->\s*(.*)', signature)
         if param_section:
             param_pattern = re.compile(r'(\w+)\s*:\s*([^,]+)')
@@ -171,8 +146,6 @@ def parse_function_signature(signature, language):
             params = [(name, ty.strip(), 'optional' if 'Option<' in ty else '') for name, ty in params]
             return_type = param_section.group(2).strip()  # Capture the return type
     elif language == "python":
-        # Adjust for Python if using type hints for return types
-        # This is a simplistic approach; adjust as necessary for your codebase
         param_section = signature.split("):", 1)
         if len(param_section) > 1 and "->" in param_section[1]:
             params_str, return_type_str = param_section
@@ -200,17 +173,12 @@ def write_functions_to_readme(rust_functions, python_functions, readme_path, rep
                 for param, param_type, optional in params:
                     optional_str = " (optional)" if optional else ""
                     readme.write(f'    - `{param}` (*{param_type}*{optional_str}): {description["params"].get(param, "No description")}\n')
-
-                # Adjust return section to match parameters format
                 if description["return"]:
-                    # Assuming the return description is in the format "variable: description"
                     return_type = return_type.replace("{","").replace(" ","")
                     return_var, return_desc = description["return"].split(":", 1)
                     readme.write('  - **Returns:**\n')
                     readme.write(f'    - `{return_var}` (*{return_type}*): {return_desc.strip()}\n')
                 readme.write('\n')
-
-        # Similar adjustment for Python functions
         if python_functions:
             readme.write('### Python Functions\n')
             for file_path, line_number, function_signature, description in python_functions:
@@ -224,8 +192,6 @@ def write_functions_to_readme(rust_functions, python_functions, readme_path, rep
                 for param, param_type, optional in params:
                     optional_str = "(optional)" if optional else ""
                     readme.write(f'    - `{param}` (*{param_type}*{optional_str}): {description["params"].get(param, "No description")}\n')
-
-                # Adjust return section to match parameters format for Python functions
                 if description["return"]:
                     return_var, return_desc = description["return"].split(":", 1)
                     readme.write('  - **Returns:**\n')
@@ -233,8 +199,101 @@ def write_functions_to_readme(rust_functions, python_functions, readme_path, rep
                 readme.write('\n')
 
 
+def generate_requirements_txt(project_path, exclude_dirs=None):
+    """
+    Uses pipreqs to generate requirements.txt for the given project path.
+    Optionally excludes specified directories.
+
+    :param project_path: Path to the project for which to generate requirements.txt
+    :param exclude_dirs: List of directory paths to exclude, relative to project_path
+    """
+    command = ['pipreqs', '--force', project_path]
+
+    if exclude_dirs:
+        # Join the list of directories to exclude into a comma-separated string
+        exclude_dirs_str = ','.join(exclude_dirs)
+        command += ['--ignore', exclude_dirs_str]
+
+    subprocess.run(command, check=True)
+
+def update_pyproject_toml(project_path):
+    """
+    Update pyproject.toml using poetry.
+    """
+    # Read requirements.txt and add each package via poetry
+    with open(f"{project_path}/requirements.txt", "r") as req_file:
+        for line in req_file:
+            package_name, version = line.strip().split('==')
+            subprocess.run(['poetry', 'add', f'{package_name}=={version}'], check=True)
+
+
+def get_python_version_requirement(pyproject_path):
+    """
+    Reads the Python version requirement from pyproject.toml.
+
+    :param pyproject_path: Path to the pyproject.toml file.
+    :return: Python version requirement as a string.
+    """
+    with open(pyproject_path, 'r', encoding='utf-8') as file:
+        data = toml.load(file)
+        python_version = data['tool']['poetry']['dependencies']['python']
+    return python_version
+
+
+def update_readme_requirements(project_path):
+    """
+    Updates README.md with a Requirements section and dynamically adds the Python version requirement.
+
+    :param project_path: Path to the project directory.
+    """
+    pyproject_path = f"{project_path}/pyproject.toml"
+    python_version_requirement = get_python_version_requirement(pyproject_path)
+
+    readme_path = f"{project_path}/README.md"
+    requirements_text = "# Requirements\n\nThe following Python packages are used in this project:\n\n"
+
+    # Generate the list of requirements from requirements.txt
+    with open(f"{project_path}/requirements.txt", "r", encoding='utf-8') as req_file:
+        for line in req_file:
+            package_name, version = line.strip().split('==')
+            requirements_text += f"- {package_name} {version}\n"
+
+    # Add Python version requirement
+    requirements_text += f"#### Python Version\n\nThis project requires Python {python_version_requirement}.\n"
+
+    # Read the current README content and remove existing Requirements and Python Version sections
+    with open(readme_path, "r", encoding='utf-8') as readme_file:
+        readme_content = readme_file.read()
+
+    # Define pattern to remove existing Requirements and Python Version sections
+    pattern = re.compile(r'(# Requirements\n.*?)(#### Python Version\n.*?)(?=# |\Z)', flags=re.DOTALL)
+    new_readme_content = re.sub(pattern, '', readme_content, 1)  # Replace only the first match
+
+    # Append the new Requirements and Python Version sections at the end of README
+    new_readme_content += "\n" + requirements_text
+
+    # Write the updated README
+    with open(readme_path, "w", encoding='utf-8') as readme_file:
+        readme_file.write(new_readme_content)
+
+
+def update_project_dependencies_and_docs(project_path,ignore_dir=None):
+    """
+    Main function to update the project dependencies and documentation.
+    """
+    print("Generating requirements.txt...")
+    generate_requirements_txt(project_path,ignore_dir)
+
+    print("Updating pyproject.toml...")
+    update_pyproject_toml(project_path)
+
+    print("Updating README.md...")
+    update_readme_requirements(project_path)
+
+    print("Update complete.")
+
+
 if __name__ == "__main__":
-    # Example usage
     repo_path = './'
     readme_path = os.path.join(repo_path, 'README.md')
     repo_base_url = 'https://github.com/zkdavis/PyParamo'
@@ -245,4 +304,8 @@ if __name__ == "__main__":
     remove_existing_functions_section(readme_path)
     pyf, rsf = document_functions(repo_path, extra_ignores)
     write_functions_to_readme(rsf,pyf, readme_path,repo_base_url)
+    gitignore_path = os.path.join(repo_path, '.gitignore')
+    if os.path.exists(gitignore_path):
+        extra_ignores.extend(parse_gitignore(gitignore_path))
+    update_project_dependencies_and_docs('./',ignore_dir=extra_ignores)
 

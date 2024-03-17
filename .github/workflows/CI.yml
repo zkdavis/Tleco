@@ -50,6 +50,7 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install semver
+          pip install toml 
 
       - name: Determine New Version
         id: versioning
@@ -69,6 +70,15 @@ jobs:
           echo $NEW_VERSION > VERSION.txt
           echo "NEW_VERSION=$NEW_VERSION" >> $GITHUB_ENV
           echo ::set-output name=new_version::$NEW_VERSION
+
+      - name: Update pyproject.toml Version
+        run: |
+          python -c "import toml; \
+                     pyproject = 'pyproject.toml'; \
+                     data = toml.load(pyproject); \
+                     data['tool']['poetry']['version'] = '${{ env.NEW_VERSION }}'; \
+                     with open(pyproject, 'w') as f: toml.dump(data, f)"
+          git add pyproject.toml
 
       - name: Commit and Push Version Update
         run: |
@@ -94,6 +104,11 @@ jobs:
         uses: actions/setup-python@v2
         with:
           python-version: '3.x'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install pipreqs poetry
 
       - name: Run the script
         run: |
