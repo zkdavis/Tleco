@@ -202,15 +202,10 @@ def write_functions_to_readme(rust_functions, python_functions, readme_path, rep
 def generate_requirements_txt(project_path, exclude_dirs=None):
     """
     Uses pipreqs to generate requirements.txt for the given project path.
-    Optionally excludes specified directories.
-
-    :param project_path: Path to the project for which to generate requirements.txt
-    :param exclude_dirs: List of directory paths to exclude, relative to project_path
     """
     command = ['pipreqs', '--force', project_path]
 
     if exclude_dirs:
-        # Join the list of directories to exclude into a comma-separated string
         exclude_dirs_str = ','.join(exclude_dirs)
         command += ['--ignore', exclude_dirs_str]
 
@@ -220,7 +215,6 @@ def update_pyproject_toml(project_path):
     """
     Update pyproject.toml using poetry.
     """
-    # Read requirements.txt and add each package via poetry
     with open(f"{project_path}/requirements.txt", "r") as req_file:
         for line in req_file:
             package_name, version = line.strip().split('==')
@@ -230,9 +224,6 @@ def update_pyproject_toml(project_path):
 def get_python_version_requirement(pyproject_path):
     """
     Reads the Python version requirement from pyproject.toml.
-
-    :param pyproject_path: Path to the pyproject.toml file.
-    :return: Python version requirement as a string.
     """
     with open(pyproject_path, 'r', encoding='utf-8') as file:
         data = toml.load(file)
@@ -243,8 +234,6 @@ def get_python_version_requirement(pyproject_path):
 def update_readme_requirements(project_path):
     """
     Updates README.md with a Requirements section and dynamically adds the Python version requirement.
-
-    :param project_path: Path to the project directory.
     """
     pyproject_path = f"{project_path}/pyproject.toml"
     python_version_requirement = get_python_version_requirement(pyproject_path)
@@ -252,27 +241,16 @@ def update_readme_requirements(project_path):
     readme_path = f"{project_path}/README.md"
     requirements_text = "# Requirements\n\nThe following Python packages are used in this project:\n\n"
 
-    # Generate the list of requirements from requirements.txt
     with open(f"{project_path}/requirements.txt", "r", encoding='utf-8') as req_file:
         for line in req_file:
             package_name, version = line.strip().split('==')
             requirements_text += f"- {package_name} {version}\n"
-
-    # Add Python version requirement
     requirements_text += f"#### Python Version\n\nThis project requires Python {python_version_requirement}.\n"
-
-    # Read the current README content and remove existing Requirements and Python Version sections
     with open(readme_path, "r", encoding='utf-8') as readme_file:
         readme_content = readme_file.read()
-
-    # Define pattern to remove existing Requirements and Python Version sections
     pattern = re.compile(r'(# Requirements\n.*?)(#### Python Version\n.*?)(?=# |\Z)', flags=re.DOTALL)
     new_readme_content = re.sub(pattern, '', readme_content, 1)  # Replace only the first match
-
-    # Append the new Requirements and Python Version sections at the end of README
     new_readme_content += "\n" + requirements_text
-
-    # Write the updated README
     with open(readme_path, "w", encoding='utf-8') as readme_file:
         readme_file.write(new_readme_content)
 
@@ -292,6 +270,36 @@ def update_project_dependencies_and_docs(project_path,ignore_dir=None):
 
     print("Update complete.")
 
+def read_version_from_file(version_file_path='VERSION.txt'):
+    """
+    Reads the project version from the specified VERSION.txt file.
+    """
+    with open(version_file_path, 'r', encoding='utf-8') as file:
+        version = file.readline().strip()
+        return version
+
+def update_pyproject_version_from_file(version_file_path='VERSION.txt', pyproject_path='pyproject.toml'):
+    """
+    Update the project version in pyproject.toml based on the version found in VERSION.txt.
+    """
+    version = read_version_from_file(version_file_path)
+
+    try:
+        import tomli
+        import tomli_w as tomlw
+    except ImportError:
+        import toml
+    with open(pyproject_path, 'rb' if 'tomli' in globals() else 'r', encoding='utf-8') as f:
+        data = tomli.load(f) if 'tomli' in globals() else toml.load(f)
+    data['tool']['poetry']['version'] = version
+    with open(pyproject_path, 'wb' if 'tomli_w' in globals() else 'w', encoding='utf-8') as f:
+        if 'tomli_w' in globals():
+            tomli_w.dump(data, f)
+        else:
+            toml.dump(data, f)
+
+    print(f"Updated version in {pyproject_path} to {version}")
+
 
 if __name__ == "__main__":
     repo_path = './'
@@ -308,4 +316,4 @@ if __name__ == "__main__":
     if os.path.exists(gitignore_path):
         extra_ignores.extend(parse_gitignore(gitignore_path))
     update_project_dependencies_and_docs('./',ignore_dir=extra_ignores)
-
+    update_pyproject_version_from_file()
