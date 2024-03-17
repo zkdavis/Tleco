@@ -2,7 +2,6 @@
 # To update, run
 #
 #    maturin generate-ci github
-#
 name: CI
 
 on:
