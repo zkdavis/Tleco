@@ -284,19 +284,11 @@ def update_pyproject_version_from_file(version_file_path='VERSION.txt', pyprojec
     """
     version = read_version_from_file(version_file_path)
 
-    try:
-        import tomli
-        import tomli_w as tomlw
-    except ImportError:
-        import toml
-    with open(pyproject_path, 'rb' if 'tomli' in globals() else 'r', encoding='utf-8') as f:
-        data = tomli.load(f) if 'tomli' in globals() else toml.load(f)
+    with open(pyproject_path,'r', encoding='utf-8') as f:
+        data = toml.load(f)
     data['tool']['poetry']['version'] = version
-    with open(pyproject_path, 'wb' if 'tomli_w' in globals() else 'w', encoding='utf-8') as f:
-        if 'tomli_w' in globals():
-            tomli_w.dump(data, f)
-        else:
-            toml.dump(data, f)
+    with open(pyproject_path, 'w', encoding='utf-8') as f:
+        toml.dump(data, f)
 
     print(f"Updated version in {pyproject_path} to {version}")
 

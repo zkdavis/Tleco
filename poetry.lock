@@ -753,6 +753,17 @@ files = [
 ]
 
 [[package]]
+name = "tomli-w"
+version = "1.0.0"
+description = "A lil' TOML writer"
+optional = false
+python-versions = ">=3.7"
+files = [
+    {file = "tomli_w-1.0.0-py3-none-any.whl", hash = "sha256:9f2a07e8be30a0729e533ec968016807069991ae2fd921a78d42f429ae5f4463"},
+    {file = "tomli_w-1.0.0.tar.gz", hash = "sha256:f463434305e0336248cac9c2dc8076b707d8a12d019dd349f5c1e382dd1ae1b9"},
+]
+
+[[package]]
 name = "zipp"
 version = "3.18.1"
 description = "Backport of pathlib-compatible object wrapper for zip files"
@@ -770,4 +781,4 @@ testing = ["big-O", "jaraco.functools", "jaraco.itertools", "more-itertools", "p
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.9"
-content-hash = "9d0a77f9bf350e58d6ed919813191b8b11801c00a23d616377fe08d7246eb345"
+content-hash = "f1cbc407fa4e4546110133a1c0a3ee9af8ef6cc056e9fb41909190921e25d752"

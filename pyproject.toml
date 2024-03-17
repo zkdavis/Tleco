@@ -1,54 +1,43 @@
 [build-system]
-requires = ["maturin>=1.4,<2.0"]
+requires = [ "maturin>=1.4,<2.0",]
 build-backend = "maturin"
 
 [project]
 name = "pyparamo"
-dynamic = ["version"]
+dynamic = [ "version",]
 description = "A description of your package"
-authors = ["Jesus M Rueda-Becerril <jm.ruebe@gmail.com>", "Zachary Davis <zachkdavis00@gmail.com>"]
+authors = [ "Jesus M Rueda-Becerril <jm.ruebe@gmail.com>", "Zachary Davis <zachkdavis00@gmail.com>",]
 license = "GPL-3.0-only"
 requires-python = ">=3.9"
-classifiers = [
-    "Programming Language :: Rust",
-    "Programming Language :: Python :: Implementation :: CPython",
-    "Programming Language :: Python :: Implementation :: PyPy",
-]
-dependencies = [
-    "astropy@6.0.0",
-    "matplotlib@3.8.2",
-    "numpy@1.26.4",
-    "pytest@8.1.1",
-    "toml@0.10.2"
-]
+classifiers = [ "Programming Language :: Rust", "Programming Language :: Python :: Implementation :: CPython", "Programming Language :: Python :: Implementation :: PyPy",]
+dependencies = [ "astropy@6.0.0", "matplotlib@3.8.2", "numpy@1.26.4", "pytest@8.1.1", "toml@0.10.2",]
 
 [tool.maturin]
-features = ["pyo3/extension-module"]
+features = [ "pyo3/extension-module",]
 module-name = "paramo"
 python-source = "pysrc"
+
+[tool.poetry]
+name = "pyparamo"
+version = "0.3.8"
+description = "A description of your package"
+authors = [ "Jesus M Rueda-Becerril <jm.ruebe@gmail.com>", "Zachary Davis <zachkdavis00@gmail.com>",]
+license = "GPL-3.0-only"
 
 [tool.pytest.ini_options]
 minversion = "6.0"
 addopts = "-ra -q"
-testpaths = [
-    "tests",
-]
-
-
-[tool.poetry]
-name = "pyparamo"
-version = "0.1.0"
-description = "A description of your package"
-authors = ["Jesus M Rueda-Becerril <jm.ruebe@gmail.com>", "Zachary Davis <zachkdavis00@gmail.com>"]
-license = "GPL-3.0-only"
+testpaths = [ "tests",]
 
 [tool.poetry.dependencies]
 python = ">=3.9"
-astropy = "^6.0.0"
-matplotlib = "^3.8.2"
-numpy = "^1.26.4"
-pytest = "^8.1.1"
-toml = "^0.10.2"
+astropy = "6.0.0"
+matplotlib = "3.8.2"
+numpy = "1.26.4"
+pytest = "8.1.1"
+toml = "0.10.2"
+tomli = "2.0.1"
+tomli-w = "1.0.0"
 
 [tool.poetry.dev-dependencies]
 pytest = "^8.1.1"
