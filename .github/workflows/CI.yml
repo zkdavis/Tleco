@@ -66,6 +66,7 @@ jobs:
             NEW_VERSION=$(python -c "import semver; print(semver.bump_patch('$VERSION'))")
           fi
           echo "New version: $NEW_VERSION"
+          echo $NEW_VERSION > VERSION.txt
           echo "NEW_VERSION=$NEW_VERSION" >> $GITHUB_ENV
           echo ::set-output name=new_version::$NEW_VERSION
 
