@@ -82,6 +82,7 @@ jobs:
           git add VERSION.txt
           git add pyproject.toml
           git add README.md
+          git add requirements.txt
           git commit -m "Increment version to ${{ env.NEW_VERSION }}"
           git push
 
