@@ -10,6 +10,13 @@ authors = [ {name="Jesus M Rueda-Becerril", email="jm.ruebe@gmail.com"}, {name =
 license = "GPL-3.0-only"
 requires-python = ">=3.9"
 classifiers = [ "Programming Language :: Rust", "Programming Language :: Python :: Implementation :: CPython", "Programming Language :: Python :: Implementation :: PyPy",]
+dependencies = [
+"astropy >= 6.0.0",
+"matplotlib >= 3.8.2",
+"numpy >= 1.26.4",
+"pytest >= 8.1.1",
+"toml >= 0.10.2"]
+
 
 [tool.maturin]
 features = [ "pyo3/extension-module",]
