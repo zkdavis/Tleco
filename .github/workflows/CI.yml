@@ -68,7 +68,11 @@ jobs:
           echo "New version: $NEW_VERSION"
           echo "NEW_VERSION=$NEW_VERSION" >> $GITHUB_ENV
           echo ::set-output name=new_version::$NEW_VERSION
-        
+
+      - name: Create and Push Tag
+        run: |
+          git tag -a v${{ env.NEW_VERSION }} -m "Tagging version v${{ env.NEW_VERSION }}"
+          git push origin v${{ env.NEW_VERSION }}      
 
   update-readme:
     runs-on: ubuntu-latest
