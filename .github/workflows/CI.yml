@@ -40,7 +40,9 @@ on:
 #      - '*'
 
 permissions:
-  contents: read
+  contents: write
+  issues: read
+
 
 jobs:
   version-update:
