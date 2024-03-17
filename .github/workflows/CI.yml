@@ -16,7 +16,7 @@ on:
     branches:
       - main
       - master
-#      - continuous_integration
+      - continuous_integration
     tags:
       - '*'
 #  pull_request:
@@ -51,32 +51,23 @@ jobs:
           pip install semver
 
       - name: Determine New Version
+        id: versioning
         run: |
-          if [[ "${{ github.event.inputs.version }}" == "" ]]; then
-            # Automatic version increment
+          MANUAL_VERSION_PATTERN="\[set version ([0-9]+\.[0-9]+\.[0-9]+)\]" # Regex to find version in commit message
+          LATEST_COMMIT_MSG=$(git log -1 --pretty=%B)
+          if [[ "$LATEST_COMMIT_MSG" =~ $MANUAL_VERSION_PATTERN ]]; then
+            NEW_VERSION="${BASH_REMATCH[1]}"
+          elif [[ "${{ github.event.inputs.version }}" != "" ]]; then
+            NEW_VERSION="${{ github.event.inputs.version }}"
+          else
             VERSION=$(cat VERSION.txt)
             echo "Current version: $VERSION"
             NEW_VERSION=$(python -c "import semver; print(semver.bump_patch('$VERSION'))")
-          else
-            # Manual version override
-            NEW_VERSION="${{ github.event.inputs.version }}"
           fi
           echo "New version: $NEW_VERSION"
-          echo $NEW_VERSION > VERSION.txt
           echo "NEW_VERSION=$NEW_VERSION" >> $GITHUB_ENV
-
-      - name: Commit and Push Version Update
-        run: |
-          git config --global user.email "action@github.com"
-          git config --global user.name "GitHub Action"
-          git add VERSION.txt
-          git commit -m "Increment version to ${{ env.NEW_VERSION }}"
-          git push
-
-      - name: Create and Push Tag
-        run: |
-          git tag -a v${{ env.NEW_VERSION }} -m "Tagging version v${{ env.NEW_VERSION }}"
-          git push origin v${{ env.NEW_VERSION }}
+          echo ::set-output name=new_version::$NEW_VERSION
+        
 
   update-readme:
     runs-on: ubuntu-latest
