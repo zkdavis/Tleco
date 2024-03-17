@@ -29,7 +29,7 @@ on:
     branches:
       - main
       - master
-      - continuous_integration
+#      - continuous_integration
     tags:
       - '*'
 #  pull_request:
@@ -63,12 +63,18 @@ jobs:
           python -m pip install --upgrade pip
           pip install semver
 
-      - name: Update Version
+      - name: Determine New Version
         run: |
-          VERSION=$(cat VERSION.txt)
-          echo "Current version: $VERSION"
-          NEW_VERSION=$(python -c "import semver; print(semver.bump_patch('$VERSION'))")
-          echo "Updated version: $NEW_VERSION"
+          if [[ "${{ github.event.inputs.version }}" == "" ]]; then
+            # Automatic version increment
+            VERSION=$(cat VERSION.txt)
+            echo "Current version: $VERSION"
+            NEW_VERSION=$(python -c "import semver; print(semver.bump_patch('$VERSION'))")
+          else
+            # Manual version override
+            NEW_VERSION="${{ github.event.inputs.version }}"
+          fi
+          echo "New version: $NEW_VERSION"
           echo $NEW_VERSION > VERSION.txt
           echo "NEW_VERSION=$NEW_VERSION" >> $GITHUB_ENV
 
@@ -187,7 +193,7 @@ jobs:
   release:
     name: Release
     runs-on: ubuntu-latest
-    if: "startsWith(github.ref, 'refs/tags/')"
+#    if: "startsWith(github.ref, 'refs/tags/')"
     needs: [linux, windows, macos, sdist]
     steps:
       - uses: actions/download-artifact@v3
