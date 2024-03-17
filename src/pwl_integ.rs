@@ -1,4 +1,3 @@
-// Assuming the required data types and constants (like PI) are defined in a separate module
 use crate::constants::*;
 
 // powlaw_integ function
