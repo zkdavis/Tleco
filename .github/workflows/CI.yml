@@ -15,7 +15,7 @@ on:
     branches:
       - main
       - master
-      - continuous_integration
+     # - continuous_integration
     tags:
       - '*'
 #  pull_request:
