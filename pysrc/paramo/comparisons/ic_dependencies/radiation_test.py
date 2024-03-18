@@ -1,7 +1,7 @@
 import numpy as np
 import typing
-from pysrc import constants as C
-import misc_func as mf
+from paramo import constants as C, misc_func as mf
+
 
 # Compton distribution function: see Dermer 6.75
 def Fc(q, Gam):

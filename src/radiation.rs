@@ -355,14 +355,15 @@ pub fn ic_iso_powlaw_full(freqs: &Array1<f64>, inu: &Array1<f64>, g: &Array1<f64
 
 
 pub fn ic_iso_monochrome(nuout: f64, uext: f64, nuext: f64, n: &Array1<f64>, g: &Array1<f64>) -> f64 {
-/* @func: computes the emissivity($\frac{ergs}{cm^3 Sr}$) at frequency nuout(Hz) from inverse Compton (IC) scattering in an isotropic photon field assuming the photon
-field is monochromatic*/
-// @param nuout: frequency(Hz) in the comoving frame to compute emission at
-// @param nuext: frequency(Hz) in the comoving frame of the external photon field.
-// @param uext: energy density($\frac{ergs}{cm^-3}$) of the external photon field in the comoving frame.
-// @param n: particle distribution as function of lorentz factor
-// @param g: Lorentz factor grid
-// @return jnu: emissivity($\frac{ergs}{cm^3 Sr}$) for frequency nuout
+    /* @func: computes the emissivity($\frac{ergs}{cm^3 Sr}$) at frequency nuout(Hz) from inverse Compton (IC) scattering in an isotropic photon field assuming the photon
+    field is monochromatic
+       @param nuout: frequency(Hz) in the comoving frame to compute emission at.
+       @param nuext: frequency(Hz) in the comoving frame of the external photon field.
+       @param uext: energy density($\frac{ergs}{cm^-3}$) of the external photon field in the comoving frame.
+       @param n: particle distribution as function of lorentz factor
+       @param g: Lorentz factor grid
+       @return jnu: emissivity($\frac{ergs}{cm^3 Sr}$) for frequency nuout
+    */
 
     let ng = g.len();
     /*
@@ -404,14 +405,15 @@ field is monochromatic*/
 
 
 pub fn ic_iso_monochrome_full(freqs: &Array1<f64>, uext: f64, nuext: f64, n: &Array1<f64>, g: &Array1<f64>) -> Array1<f64> {
-/* @func: computes the emissivity($\frac{ergs}{cm^3 Sr}$) from inverse Compton (IC) scattering in an isotropic photon field assuming the photon
-field is monochromatic*/
-// @param freq: frequency(Hz) array in the comoving frame to compute emission over.
-// @param nuext: frequency(Hz) in the comoving frame of the external photon field.
-// @param uext: energy density($\frac{ergs}{cm^-3}$) of the external photon field in the comoving frame.
-// @param n: particle distribution as function of lorentz factor
-// @param g: Lorentz factor grid
-// @return jic: emissivity($\frac{ergs}{cm^3 Sr}$) for frequency range freq
+    /* @func: computes the emissivity($\frac{ergs}{cm^3 Sr}$) from inverse Compton (IC) scattering in an isotropic photon field assuming the photon
+    field is monochromatic
+       @param freqs: frequency(Hz) array in the comoving frame to compute emission over.
+       @param nuext: frequency(Hz) in the comoving frame of the external photon field.
+       @param uext: energy density($\frac{ergs}{cm^-3}$) of the external photon field in the comoving frame.
+       @param n: particle distribution as function of lorentz factor
+       @param g: Lorentz factor grid
+       @return jic: emissivity($\frac{ergs}{cm^3 Sr}$) for frequency range freq
+    */
 
 // todo: create one of these that combines mono and powlaw
     let numdf = freqs.len();
@@ -499,12 +501,13 @@ fn trans_kn_fit(x: f64, p: f64) -> f64 {
 }
 
 pub fn rad_cool_pwl(gg: &Array1<f64>, freqs: &Array1<f64>, uu: &Array1<f64>, with_kn: bool) -> Array1<f64> {
-    /* @func: computes the radiative inverse Compton cooling ($\frac{\partial g}{\partial t}$ [$s^{-1}$]) from isotropic photon field uu($\frac{ergs}{cm^-3}$) */
-    // @param gg: Lorentz factor grid
-    // @param freqs: frequency(Hz) array in the comoving frame.
-    // @param uu: energy density($\frac{ergs}{cm^-3}$) of photon field in the comoving frame for every frequency in freqs.
-    // @param with_kn: bool that will include Klein Nishina affects to the cross section when true.
-    // @return dotg: radiative cooling ($\frac{\partial g}{\partial t}$ [$s^{-1}$])
+    /* @func: computes the radiative inverse Compton cooling ($\frac{\partial g}{\partial t}$ [$s^{-1}$]) from isotropic photon field uu($\frac{ergs}{cm^-3}$)
+       @param gg: Lorentz factor grid
+       @param freqs: frequency(Hz) array in the comoving frame.
+       @param uu: energy density($\frac{ergs}{cm^-3}$) of photon field in the comoving frame for every frequency in freqs.
+       @param with_kn: bool that will include Klein Nishina affects to the cross section when true.
+       @return dotg: radiative cooling ($\frac{\partial g}{\partial t}$ [$s^{-1}$])
+    */
 
     let urad_const = 4.0 * SIGMAT * CLIGHT / (3.0 * ENERGY_E);
     let xi_c = 4.0 * H_MEC2;
@@ -553,12 +556,13 @@ pub fn rad_cool_pwl(gg: &Array1<f64>, freqs: &Array1<f64>, uu: &Array1<f64>, wit
 }
 
 pub fn rad_cool_mono(gg: &Array1<f64>, nu0: f64, u0: f64, with_kn: bool) -> Array1<f64> {
-    /* @func: computes the radiative inverse Compton cooling ($\frac{\partial g}{\partial t}$ [$s^{-1}$]) from isotropic monotonic photon field u0($\frac{ergs}{cm^-3}$) */
-    // @param gg: Lorentz factor grid
-    // @param nu0: frequency(Hz) in the comoving frame of the photon field u0.
-    // @param u0: energy density($\frac{ergs}{cm^-3}$) of photon field in the comoving frame.
-    // @param with_kn: bool that will include Klein Nishina affects to the cross section when true.
-    // @return dotg: radiative cooling ($\frac{\partial g}{\partial t}$ [$s^{-1}$])
+    /* @func: computes the radiative inverse Compton cooling ($\frac{\partial g}{\partial t}$ [$s^{-1}$]) from isotropic monotonic photon field u0($\frac{ergs}{cm^-3}$)
+       @param gg: Lorentz factor grid
+       @param nu0: frequency(Hz) in the comoving frame of the photon field u0.
+       @param u0: energy density($\frac{ergs}{cm^-3}$) of photon field in the comoving frame.
+       @param with_kn: bool that will include Klein Nishina affects to the cross section when true.
+       @return dotg: radiative cooling ($\frac{\partial g}{\partial t}$ [$s^{-1}$])
+    */
 
     let urad_const = 4.0 * SIGMAT * CLIGHT / (3.0 * ENERGY_E);
     let xi0: Array1<f64> = 4.0 * gg * nu0 * H_MEC2;

@@ -4,7 +4,6 @@ Special Relativity toolkit
 
 ******************************************************************************/
 pub mod srtoolkit {
-    // Assuming constants like cLight are defined in a constants module
     use crate::constants::*;
     use ndarray::Array1;
 

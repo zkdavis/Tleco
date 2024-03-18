@@ -1,7 +1,7 @@
 import matplotlib.pyplot as plt
 import paramo as para
 import numpy as np
-import constants as C
+from paramo import constants as C
 from ic_dependencies import radiation_test as rt
 
 def run_test(num_g,num_f):

@@ -2,23 +2,98 @@
 # To update, run
 #
 #    maturin generate-ci github
-#
 name: CI
 
 on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Manual version override (e.g., 1.0.1). Leave empty for automatic increment.'
+        required: false
+        default: ''
   push:
     branches:
       - main
       - master
+     # - continuous_integration
     tags:
       - '*'
-  pull_request:
-  workflow_dispatch:
+#  pull_request:
+#    branches:
+#      - main
+#      - master
+#    tags:
+#      - '*'
+##
 
 permissions:
-  contents: read
+  contents: write
+  issues: read
+
 
 jobs:
+  update-readme:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }} # Ensure using GITHUB_TOKEN for authentication
+          fetch-depth: 0 # Necessary for tags creation and push
+
+      - name: Set up Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: '3.x'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install pipreqs poetry
+          pip install toml 
+          pip install semver
+
+      - name: Run the script
+        run: |
+          python readme_updater.py
+
+      - name: Determine New Version
+        id: versioning
+        run: |
+          MANUAL_VERSION_PATTERN="\[set version ([0-9]+\.[0-9]+\.[0-9]+)\]" # Regex to find version in commit message
+          LATEST_COMMIT_MSG=$(git log -1 --pretty=%B)
+          if [[ "$LATEST_COMMIT_MSG" =~ $MANUAL_VERSION_PATTERN ]]; then
+            NEW_VERSION="${BASH_REMATCH[1]}"
+          elif [[ "${{ github.event.inputs.version }}" != "" ]]; then
+            NEW_VERSION="${{ github.event.inputs.version }}"
+          else
+            VERSION=$(cat VERSION.txt)
+            echo "Current version: $VERSION"
+            NEW_VERSION=$(python -c "import semver; print(semver.bump_patch('$VERSION'))")
+          fi
+          echo "New version: $NEW_VERSION"
+          echo $NEW_VERSION > VERSION.txt
+          echo "NEW_VERSION=$NEW_VERSION" >> $GITHUB_ENV
+          echo ::set-output name=new_version::$NEW_VERSION
+
+      - name: Commit and Push Version Update
+        run: |
+          git config --global user.email "action@github.com"
+          git config --global user.name "GitHub Action"
+          git add VERSION.txt
+          git add pyproject.toml
+          git add README.md
+          git add requirements.txt
+          git commit -m "Increment version to ${{ env.NEW_VERSION }}"
+          git push
+
+      - name: Create and Push Tag
+        run: |
+          git tag -a v${{ env.NEW_VERSION }} -m "Tagging version v${{ env.NEW_VERSION }}"
+          git push origin v${{ env.NEW_VERSION }} 
+
+
+  
+
   linux:
     runs-on: ubuntu-latest
     strategy:
@@ -105,7 +180,7 @@ jobs:
   release:
     name: Release
     runs-on: ubuntu-latest
-    if: "startsWith(github.ref, 'refs/tags/')"
+#    if: "startsWith(github.ref, 'refs/tags/')"
     needs: [linux, windows, macos, sdist]
     steps:
       - uses: actions/download-artifact@v3
