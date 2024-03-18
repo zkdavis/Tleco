@@ -208,8 +208,6 @@ pub fn tridag_ser(a: &Array1<f64>, b: &Array1<f64>, c: &Array1<f64>, r: &Array1<
 
 
 pub fn trapzd_w2arg(funci: Option<fn(f64, f64) -> f64>, a: f64, b: f64, s: &mut f64, n: u32, p: f64){
-    let it = 2_u32.pow(n - 2);
-    let del = (b - a) / it as f64;
 
     let func = funci.unwrap();
 
@@ -218,6 +216,8 @@ pub fn trapzd_w2arg(funci: Option<fn(f64, f64) -> f64>, a: f64, b: f64, s: &mut 
         let func_results: Vec<f64> = values.iter().map(|&v| func(v,p)).collect();
         *s = 0.5 * (b - a) * func_results.iter().sum::<f64>();
     } else {
+        let it = 2_u32.pow(n - 2);
+        let del = (b - a) / it as f64;
         let values: Vec<f64> = (0..it).map(|i| a + (i as f64 + 0.5) * del).collect();
         let func_results: Vec<f64> = values.iter().map(|&v| func(v,p)).collect();
         let fsum: f64 = func_results.iter().sum();

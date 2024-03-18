@@ -99,6 +99,15 @@ pub fn rad_trans_blob(blob_radius: f64, j_nu: Vec<f64>, a_nu: Vec<f64>) -> PyRes
     Ok(result.to_vec())
 }
 
+#[pyfunction]
+pub fn rad_trans_slab(blob_radius: f64, j_nu: Vec<f64>, a_nu: Vec<f64>) -> PyResult<Vec<f64>> {
+    let jnu_arr = Array1::from_vec(j_nu);
+    let anu_arr = Array1::from_vec(a_nu);
+    let result =  radiation::rad_trans_slab(blob_radius, &jnu_arr, &anu_arr);
+
+    Ok(result.to_vec())
+}
+
 
 #[pyfunction]
 fn ic_iso_powlaw_full(freqs: Vec<f64>, inu: Vec<f64>, g: Vec<f64>, n: Vec<f64>) -> PyResult<Vec<f64>> {
@@ -156,5 +165,6 @@ fn paramo(_py: Python, m: &PyModule) -> PyResult<()> {
     m.add_function(wrap_pyfunction!(rad_cool_pwl, m)?)?;
     m.add_function(wrap_pyfunction!(rad_cool_mono, m)?)?;
     m.add_function(wrap_pyfunction!(ic_iso_monochrome_full, m)?)?;
+    m.add_function(wrap_pyfunction!(rad_trans_slab, m)?)?;
     Ok(())
 }
