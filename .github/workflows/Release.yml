@@ -26,8 +26,6 @@ jobs:
         with:
           token: ${{ secrets.GITHUB_TOKEN }} # Ensure using GITHUB_TOKEN for authentication
           fetch-depth: 0 # Necessary for tags creation and push
-      - name: Checkout Repository
-        uses: actions/checkout@v3
       - name: Check Commit Message
         id: commit-message-check
         run: |
