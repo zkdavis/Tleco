@@ -199,7 +199,7 @@ def write_functions_to_readme(rust_functions, python_functions, readme_path, rep
                 readme.write('\n')
 
 
-def generate_requirements_txt(project_path, exclude_dirs=None):
+def generate_requirements_txt(project_path, exclude_dirs=None,  additional_deps=None):
     """
     Uses pipreqs to generate requirements.txt for the given project path.
     """
@@ -210,6 +210,12 @@ def generate_requirements_txt(project_path, exclude_dirs=None):
         command += ['--ignore', exclude_dirs_str]
 
     subprocess.run(command, check=True)
+
+    if additional_deps:
+        requirements_path = f"{project_path}/requirements.txt"
+        with open(requirements_path, "a") as req_file:
+            for dep in additional_deps:
+                req_file.write(f"{dep}\n")
 
 def update_pyproject_toml(project_path):
     """
@@ -255,12 +261,12 @@ def update_readme_requirements(project_path):
         readme_file.write(new_readme_content)
 
 
-def update_project_dependencies_and_docs(project_path,ignore_dir=None):
+def update_project_dependencies_and_docs(project_path,ignore_dir=None,additional_deps=None):
     """
     Main function to update the project dependencies and documentation.
     """
     print("Generating requirements.txt...")
-    generate_requirements_txt(project_path,ignore_dir)
+    generate_requirements_txt(project_path,ignore_dir,additional_deps=additional_deps)
 
     print("Updating pyproject.toml...")
     update_pyproject_toml(project_path)
@@ -321,6 +327,7 @@ if __name__ == "__main__":
     gitignore_path = os.path.join(repo_path, '.gitignore')
     if os.path.exists(gitignore_path):
         extra_ignores.extend(parse_gitignore(gitignore_path))
-    update_project_dependencies_and_docs('./',ignore_dir=extra_ignores)
+    add_deps=['maturin']
+    update_project_dependencies_and_docs('./',ignore_dir=extra_ignores,additional_deps=add_deps)
     update_pyproject_version_from_file()
     update_cargo_version_from_file()
