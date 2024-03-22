@@ -9,7 +9,9 @@ on:
         default: ''
   push:
     branches:
-      - '**'
+      - main
+      - master
+      - wheel_testing
 
 permissions:
   issues: read
