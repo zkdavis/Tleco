@@ -1,5 +1,7 @@
 import numpy as np
 import typing
+import scipy
+from scipy import integrate
 from paramo import constants as C, misc_func as mf
 
 
@@ -92,3 +94,38 @@ def j_ic_mono_pwl_electron_dermer_full(eps_s_array:[float],eps_in,u0,p,n_array:[
         j_ic[i] = j_ic_mono_pwl_electron_dermer(eps_s_i,eps_in,u0,p,n_array,g_array)
 
     return j_ic
+
+
+def j_syn_explicit(nu,B,n,g, rtol=1.48e-10, tol=1.48e-10, divmax=10):
+    ##dermer 7.44
+    ## calculates the average power emitted from a distribution
+    ## this method will be slow and is not recommended
+
+    def W(k,mu,x):
+        #whittaker function
+        f = scipy.special.hyperu(mu - k + (1/2), 1 + 2*mu, x)
+        f= f*np.exp(-x/2)*(x**(mu + (1/2)))
+        return f
+
+    def R(x):
+        #dermer 7.45
+        f = 0.5*np.pi*x
+        f = f*(W(0,4/3,x)*W(0,1/3,x) - W(1/2,5/6,x)*W(-1/2,5/6,x))
+        return f
+
+    def f(gv,i):
+        gv = 10**gv
+        nuB = C.eCharge * B / (np.pi * 2 * C.me * C.cLight)
+        x = 2*nu[i] / (3* nuB * (gv ** 2))
+        gs = np.argsort(np.abs(g-gv))
+        m = (n[gs[0]] - n[gs[1]])/(g[gs[0]] - g[gs[1]])
+        nf = n[gs[0]] + m*(g[gs[0]] - gv)
+        return nf*R(x)*gv*np.log(10)
+
+    jcon = np.sqrt(3)*(C.eCharge**3)/(C.me*(C.cLight**2)*np.pi*4)
+    j = np.zeros(len(nu))
+    for i in range(len(nu)):
+        i1 = integrate.romberg(f, np.log10(g[0]), np.log10(g[-1]),  args=([i]),rtol=rtol, tol=tol, divmax=divmax)
+        j[i] = jcon*B*i1
+
+    return j
