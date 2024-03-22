@@ -31,8 +31,30 @@ permissions:
 
 
 jobs:
+  check-commit-message:
+    runs-on: ubuntu-latest
+    outputs:
+      should-run: ${{ steps.commit-message-check.outputs.should-run }}
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }} # Ensure using GITHUB_TOKEN for authentication
+          fetch-depth: 0 # Necessary for tags creation and push
+      - name: Check Commit Message
+        id: commit-message-check
+        run: |
+          COMMIT_MESSAGE=$(git log --format=%B -n 1 ${{ github.event.after }})
+          echo "Commit message: $COMMIT_MESSAGE"
+          if [[ "$COMMIT_MESSAGE" == *"[Trigger-Workflow]"* ]]; then
+            echo "::set-output name=should-run::true"
+          else
+            echo "::set-output name=should-run::false"
+          fi
+
   update-readme:
     runs-on: ubuntu-latest
+    needs: check-commit-message
+    if: ${{ needs.check-commit-message.outputs.should-run == 'false' }}
     steps:
       - uses: actions/checkout@v2
         with:
