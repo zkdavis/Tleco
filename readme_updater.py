@@ -327,7 +327,7 @@ if __name__ == "__main__":
     gitignore_path = os.path.join(repo_path, '.gitignore')
     if os.path.exists(gitignore_path):
         extra_ignores.extend(parse_gitignore(gitignore_path))
-    add_deps=['maturin']
+    add_deps=['maturin==1.5']
     update_project_dependencies_and_docs('./',ignore_dir=extra_ignores,additional_deps=add_deps)
     update_pyproject_version_from_file()
     update_cargo_version_from_file()
