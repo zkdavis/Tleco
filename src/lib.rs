@@ -14,7 +14,7 @@ mod pwl_integ;
 
 /// Example retrieving constant from constants file can be improved by using macros
 #[pyfunction]
-fn get_pi() -> PyResult<f64> {
+fn get_c() -> PyResult<f64> {
     Ok(constants::CLIGHT)
 }
 
@@ -154,7 +154,7 @@ fn ic_iso_monochrome_full(freqs: Vec<f64>, uext: f64,nuext: f64, n: Vec<f64>, g:
 /// A Python module implemented in Rust.
 #[pymodule]
 fn paramo(_py: Python, m: &PyModule) -> PyResult<()> {
-    m.add_function(wrap_pyfunction!(get_pi, m)?)?;
+    m.add_function(wrap_pyfunction!(get_c, m)?)?;
     m.add_function(wrap_pyfunction!(gofb, m)?)?;
     m.add_function(wrap_pyfunction!(bofg, m)?)?;
     m.add_function(wrap_pyfunction!(eq_59_park1995, m)?)?;
