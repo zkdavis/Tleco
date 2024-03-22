@@ -36,7 +36,7 @@ jobs:
     steps:
       - uses: actions/checkout@v2
         with:
-          token: ${{ secrets.GITHUB_TOKEN }} # Ensure using GITHUB_TOKEN for authentication
+          token: ${{ secrets.README_PAT }} # Ensure using GITHUB_TOKEN for authentication
           fetch-depth: 0 # Necessary for tags creation and push
 
       - name: Set up Python
