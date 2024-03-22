@@ -292,6 +292,20 @@ def update_pyproject_version_from_file(version_file_path='VERSION.txt', pyprojec
 
     print(f"Updated version in {pyproject_path} to {version}")
 
+def update_cargo_version_from_file(version_file_path='VERSION.txt', cargo_path='Cargo.toml'):
+    """
+    Update the project version in Cargo.toml based on the version found in VERSION.txt.
+    """
+    version = read_version_from_file(version_file_path)
+
+    with open(cargo_path,'r', encoding='utf-8') as f:
+        data = toml.load(f)
+    data['package']['version'] = version
+    with open(cargo_path, 'w', encoding='utf-8') as f:
+        toml.dump(data, f)
+
+    print(f"Updated version in {cargo_path} to {version}")
+
 
 if __name__ == "__main__":
     repo_path = './'
@@ -309,3 +323,4 @@ if __name__ == "__main__":
         extra_ignores.extend(parse_gitignore(gitignore_path))
     update_project_dependencies_and_docs('./',ignore_dir=extra_ignores)
     update_pyproject_version_from_file()
+    update_cargo_version_from_file()

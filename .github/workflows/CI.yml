@@ -81,6 +81,7 @@ jobs:
           git config --global user.name "GitHub Action"
           git add VERSION.txt
           git add pyproject.toml
+          git add Cargo.toml
           git add README.md
           git add requirements.txt
           git commit -m "Increment version to ${{ env.NEW_VERSION }}"
