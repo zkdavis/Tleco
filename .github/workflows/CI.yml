@@ -52,10 +52,6 @@ jobs:
           pip install toml 
           pip install semver
 
-      - name: Run the script
-        run: |
-          python readme_updater.py
-
       - name: Determine New Version
         id: versioning
         run: |
@@ -74,6 +70,10 @@ jobs:
           echo $NEW_VERSION > VERSION.txt
           echo "NEW_VERSION=$NEW_VERSION" >> $GITHUB_ENV
           echo ::set-output name=new_version::$NEW_VERSION
+
+      - name: Run the script
+        run: |
+          python readme_updater.py
 
       - name: Commit and Push Version Update
         run: |
