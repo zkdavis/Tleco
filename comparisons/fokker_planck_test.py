@@ -1,10 +1,11 @@
 import numpy as np
 import matplotlib.pyplot as plt
-import scipy.integrate as integrate
 
 
 def get_n0(p, gmin, gmax):
-    return integrate.quad(lambda x: x ** p, gmin, gmax)[0]
+    x_values = np.linspace(gmin, gmax, num=1000)
+    y_values = x_values**p
+    return np.trapz(y_values, x_values)
 
 
 def plot_setup():
@@ -65,7 +66,7 @@ def convergence_plots_analytic(numt, numgs):
     fig_ns, ax_ns = plot_setup()
     fig_eers, ax_eers = plot_setup()
     fig_nios, ax_nios = plot_setup()
-    ax_nios.set_xscale('linear')  # Only change for ax_nios
+    ax_nios.set_xscale('linear')
 
     # Plot data
     plot_data(ax_error, xs, ys, 'scatter')
@@ -74,12 +75,10 @@ def convergence_plots_analytic(numt, numgs):
         plot_data(ax_ns, gs[i], ns[i], 'plot', label='N=' + str(xs[i]))
     ax_ns.plot(gs[-1], analytical_solution(n0, gs[-1]), '--')
 
-    # Adjust plots
     adjust_plot(ax_error, "Number of bins (N)", "Error", "Convergence at steady state")
     adjust_plot(ax_ns, "$\gamma$", r"n $[cm^{-3}]$", "Steady State Solutions")
     adjust_plot(ax_eers, "$\gamma$", "Error", "Error Analysis")
     adjust_plot(ax_nios, "Number of bins (N)", "Normalized Intensity", "Intensity Over Bins")
 
-    # Legend and show
     add_legend(ax_ns)
     plt.show()
