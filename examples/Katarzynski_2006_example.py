@@ -1,11 +1,9 @@
-import os.path
-
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.cm as cm
 import matplotlib.colors
 import misc_func
-import conversion_funcs as cf
+from paramo import conversion_funcs as cf
 import paramo as para
 import constants as cons
 from tqdm import tqdm
