@@ -293,6 +293,7 @@ def update_pyproject_version_from_file(version_file_path='VERSION.txt', pyprojec
     with open(pyproject_path,'r', encoding='utf-8') as f:
         data = toml.load(f)
     data['tool']['poetry']['version'] = version
+    data['project']['version'] = version
     with open(pyproject_path, 'w', encoding='utf-8') as f:
         toml.dump(data, f)
 

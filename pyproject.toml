@@ -4,7 +4,7 @@ build-backend = "maturin"
 
 [project]
 name = "pyparamo"
-dynamic = [ "version",]
+version = "0.1.0"
 description = "Paramo stands for: PArticles and RAdiation MOnitor. In a few words: this code solves que Fokker-Planck equation and calculates synchrotron and inverse Compton emission."
 license = "GPL-3.0-only"
 requires-python = ">=3.9"
