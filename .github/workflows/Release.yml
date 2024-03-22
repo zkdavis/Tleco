@@ -22,6 +22,10 @@ jobs:
     outputs:
       should-run: ${{ steps.commit-message-check.outputs.should-run }}
     steps:
+      - uses: actions/checkout@v2
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }} # Ensure using GITHUB_TOKEN for authentication
+          fetch-depth: 0 # Necessary for tags creation and push
       - name: Checkout Repository
         uses: actions/checkout@v3
       - name: Check Commit Message
