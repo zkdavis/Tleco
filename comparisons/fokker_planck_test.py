@@ -1,6 +1,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 from paramo import misc_func
+from dependencies import fp_test
 import paramo as para
 
 
@@ -130,50 +131,52 @@ def convergence_plots_analytic(numt, numgs):
     add_legend(ax_ns)
     plt.show()
 
-def run_time_test(numg,numt,n0):
-    C0 = 3.48e-11
-    t_acc = 1 / (C0 * (10**(4.5)))
-    tmax = t_acc * 300
-    t = np.logspace(0, np.log10(tmax), numt)
+
+def run_time_test(numt,numg):
+    t_acc = 1
+    tmax = t_acc * 0.1
+    t = np.logspace(np.log10(1e-4), np.log10(tmax), numt)
     g = np.logspace(0, np.log10(1.5e8), numg)
-    D_0 = 0.5 * np.power(g, 2) / t_acc
+    D_0 = np.power(g, 3)
     D1 = 2 * D_0
     gdot1 = np.zeros([numt, numg])
-    gdot1[0, :] = C0 * np.power(g, 2) - 4 * D_0 / g
-    tlc = tmax
-    p, gcut1, g2cut1 = 0, 1e4, 1e6
+    gdot1[0, :] = (g ** 2) - 3 * (g ** 2) - 2 * D_0 / g
+    tlc = tmax * 100
     n1 = np.zeros([numt, numg])
-    n1[0, :] = misc_func.power_law(1, g, p, gcut1, g2cut1)
-    n1[0, :] = n0*n1[0, :]/np.trapz(n1[0, :],g)
+    n1[0, :] = fp_test.eq_59_park1995(1e-4, g)
+    n1[0, :] = n1[0, :] / np.trapz(n1[0, :], g)
 
     for i in range(1, numt):
         dt = t[i] - t[i - 1]
-        n1[i, :] = para.fp_findif_difu(dt, g, n1[i - 1, :], gdot1[i - 1, :], D1, np.zeros_like(D1), 1e200, tlc, False)
+        n1[i, :] = para.fp_findif_difu(dt, g, n1[i - 1, :], gdot1[i - 1, :], D1, np.zeros_like(D1), 1e0, tlc, False)
         gdot1[i, :] = gdot1[0, :]
 
-    return g,n1,t
+    return g, n1, t
 
 
 def get_error_analytic_time(ei, ef):
     errors = np.where(ef > 0, ((ef - ei) / ef) ** 2, 0)
     eers = np.sqrt(errors)
-    er = np.sqrt(np.mean(errors))
+    er = np.sqrt(np.sum(errors)/len(ei))
 
     return er, eers
 
-def plot_convergence_results(numts, numg, t):
+
+def plot_convergence_results_time(numts, numg, t):
     results = []
     nios = []
     gmin, gmax = 1e4, 1e6
-    n0 = get_n0(0, gmin, gmax)
+    n0 = 1  # get_n0(0, gmin, gmax)
     ts = [5e-4, 1e-3, 5e-3, 1e-2]
-
     for mt in numts:
-        g,n,tr = run_time_test(mt, numg)
+        g, n, tr = run_time_test(mt, numg)
         tind = np.argmin(np.abs(tr - t))
-        ei, eig = n[tind,:], g
-        ef = n0 * np.array([para.eq_59_Park1995(t + 1e-4, g) for g in eig]) / np.trapz(para.eq_59_Park1995(1e-4, eig), eig)
-        nio = np.trapz(ei, eig) / np.trapz(n[0,:], eig)
+        ei = n[tind, :]
+        norm = np.trapz(fp_test.eq_59_park1995(1e-4, g)*g*np.log(10),np.log10(g))
+        yt = np.array(fp_test.eq_59_park1995(t + 1e-4, g))
+        norm2 = np.trapz(yt,g)
+        ef = n0 * np.array(fp_test.eq_59_park1995(t + 1e-4, g)) / norm
+        nio = np.trapz(ei, g) / np.trapz(n[0, :], g)
         nios.append(nio)
         minargs = np.argsort(np.abs(ei - 1e-8))
         ma1 = minargs[0]
@@ -189,43 +192,70 @@ def plot_convergence_results(numts, numg, t):
             gmaxci = ma2
             gminci = ma1
 
-        eig = eig[gminci:gmaxci]
+        g = g[gminci:gmaxci]
         ei = ei[gminci:gmaxci]
         ef = ef[gminci:gmaxci]
 
-        er, eer = get_error_analytic_time(ei, ef, eig)
-        results.append((mt, er, eer, eig, ei))
+        er, eer = get_error_analytic_time(ei, ef)
+        results.append((mt, er, eer, g, ei,ef))
 
     plot_results(results, ts[-1], nios)
 
 
-def plot_results(results, t, nios):
-    fig, axs = plt.subplots(4, 1, figsize=(10, 20))
+def plot_results(results, t, nios, separate_figures=True):
     colors = ['tab:blue', 'tab:orange', 'tab:green', 'tab:red', 'tab:purple']
 
-    for i, (mt, er, eer, eig, ei) in enumerate(results):
+    if separate_figures:
+        figs = [plt.figure(figsize=(10, 5)) for _ in range(4)]
+        axs = [fig.add_subplot(111) for fig in figs]
+    else:
+        fig, axs = plt.subplots(4, 1, figsize=(10, 20))
+    mts = []
+    ers = []
+    for i, (mt, er, eer, eig, ei,ef) in enumerate(results):
+        mts.append(mt)
+        ers.append(er)
         axs[0].scatter(mt, er, color=colors[i % len(colors)], label=f'MT={mt}')
         axs[1].scatter(eig, eer, color=colors[i % len(colors)], s=4)
         axs[2].plot(eig, ei, label=f'Number of bins: {mt}')
         axs[3].scatter(mt, nios[i], color=colors[i % len(colors)])
+
+    x_sol = results[-1][3]
+    y_sol = results[-1][5]
+
+    axs[3].set_xscale('log')
+    axs[0].set_title(f"Convergence at t={t:.2E}")
+    axs[2].plot(x_sol,  y_sol, '--',
+                label='Analytic solution')
+    axs[0].plot(mts, ers[2] * (np.array(mts) /mts[2]) ** -1, label='$\propto N^{-1}$', color='black')
+    axs[2].set_ylim([1e-8, 2e-2])
+    axs[2].set_xlim([1e1, 1e4])
 
     for ax in axs[:3]:
         ax.set_yscale('log')
         ax.set_xscale('log')
         ax.legend()
 
-    axs[3].set_xscale('log')
-    axs[0].set_title(f"Convergence at t={t:.2E}")
-    axs[2].plot(results[-1][3], results[-1][2], '--', label='Analytic solution')
-    axs[2].set_ylim([1e-8, 1e-1])
-    axs[2].set_xlim([1e1, 1e4])
+    # if separate_figures:
+    #     for fig in figs:
+    #         fig.savefig()
+
     plt.show()
 
-
 if __name__ == '__main__':
-    garr = [25, 50, 100, 200, 400, 800, 1600, 3200]
-    # garr = [100, 500, 3500]
-    # garr = [20,50, 100,200,300,500]
-    numtarr = [600]
-    # numtarr = [200]
-    convergence_plots_analytic(numtarr[0], garr)
+    # garr = [25, 50, 100, 200, 400, 800, 1600, 3200]
+    # # garr = [100, 500, 3500]
+    # # garr = [20,50, 100,200,300,500]
+    # numtarr = [600]
+    # # numtarr = [200]
+    #
+    # convergence_plots_analytic(numtarr[0], garr)
+
+    # numtarr = [100, 300, 900]
+    numtarr = [100, 300,500]
+    # numtarr = [100, 200, 300, 400, 500, 600, 700, 800, 900, 1000, 1500]
+    garr = [900]
+    # garr = [200]
+    ts = [5e-4, 1e-3, 5e-3, 1e-2]
+    t = ts[3]
+    plot_convergence_results_time(numtarr, garr[0],t)
