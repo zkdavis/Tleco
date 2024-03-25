@@ -144,9 +144,11 @@ def plot_comparison_and_error():
     ax2.legend(loc='best', fontsize=12 * scale_mult, title_fontsize=12)
 
     # fig2.savefig("error_plot.pdf", dpi=200, bbox_inches="tight")
+    fig.savefig(f"Figs/syn_comparison.pdf", dpi=800, bbox_inches="tight")
+    fig.savefig(f"Figs/syn_comparison.png", dpi=800, bbox_inches="tight")
 
     # plt.show()
 
 if __name__ == '__main__':
     plot_comparison_and_error()
-    run_convergence_test([25,50,150,300,500,1000],[25,50,150,300,500,1000],[2e13,2.5e19])
+    # run_convergence_test([25,50,150,300,500,1000],[25,50,150,300,500,1000],[2e13,2.5e19])

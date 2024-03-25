@@ -19,24 +19,23 @@ def analytical_solution(n0, g):
 
 
 def get_n0(p, gmin, gmax):
-    x_values = np.logspace(np.log10(gmin), np.log10(gmax), num=1000)
+    x_values = np.logspace(np.log10(gmin), np.log10(gmax), num=10000)
     y_values = x_values ** p
     return np.trapz(y_values, x_values)
 
 
 def plot_setup():
-    fig, ax = plt.subplots()
+    fig, ax = plt.subplots(figsize=(8, 8))
     ax.set_yscale('log')
     ax.set_xscale('log')
     return fig, ax
 
 
 def add_legend(ax, location='lower center'):
-    ax.legend(loc=location)
-    ax.set_xlabel("$\gamma$", fontsize=18)
-    ax.set_ylabel(r"n $[cm^{-3}]$", fontsize=18)
-    ax.set_title(" Steady State Solutions ", y=1.0, pad=-14, loc='left')
-    ax.tick_params(axis='both', which='both', labelsize=15)
+    scale_mult = 2
+    ax.legend(loc='best', fontsize=12 * scale_mult, title_fontsize=12)
+    # ax.set_title(" Steady State Solutions ", y=1.0, pad=-14, loc='left')
+    # ax.tick_params(axis='both', which='both', labelsize=15)
 
 
 def plot_data(ax, x_data, y_data, plot_type='scatter', **kwargs):
@@ -47,17 +46,19 @@ def plot_data(ax, x_data, y_data, plot_type='scatter', **kwargs):
 
 
 def adjust_plot(ax, x_label, y_label, title):
-    ax.set_xlabel(x_label, fontsize=18)
-    ax.set_ylabel(y_label, fontsize=18)
+    scale_mult = 2
+    ax.set_xlabel(x_label,fontsize=10 * scale_mult)
+    ax.set_ylabel(y_label, fontsize=10 * scale_mult)
     ax.set_title(title, y=1.0, pad=-14, loc='left')
-    ax.tick_params(axis='both', which='both', labelsize=15)
+    ax.tick_params(axis='both', which='major', size=12 * scale_mult, labelsize=12 * scale_mult)
+    ax.tick_params(axis='both', which='minor', size=0 * scale_mult)
 
 
 def get_error_analytic(ei, eig, n0):
     ef = analytical_solution(n0, eig)
     valid_ef = ef > 0
     errors = np.where(valid_ef, ((ef - ei) / ef) ** 2, 0)
-    er = np.sqrt(sum(errors) / len(eig))
+    er = np.sqrt(sum(errors)/len(ei))
     eers = np.sqrt(errors)
     return er, eers
 
@@ -114,22 +115,35 @@ def convergence_plots_analytic(numt, numgs):
     fig_nios, ax_nios = plot_setup()
     ax_nios.set_xscale('linear')
 
-    xc2 = np.logspace(1.5, 3.8)
-    ax_error.plot(xc2, ys[2] * (xc2 / xs[2]) ** -1, label='$\propto N^{-1}$', color='black')
+    xc2 = np.logspace(1, 3.8)
+    ax_error.plot(xc2, ys[2] * (xc2 / numgs[2]) ** -2, label='$\propto N^{-2}$',linestyle='--', color='black',linewidth=3)
 
-    plot_data(ax_error, numgs, ys, 'scatter')
+    plot_data(ax_error, xs, ys, 'scatter',c='blue',s=60,marker='o')
+    allowed_numgs=[25,50,100,800]
     for i in range(len(gs)):
         plot_data(ax_eers, g2s[i], eers[i], 'scatter', s=4)
-        plot_data(ax_ns, gs[i], ns[i][-1, :], 'plot', label='N=' + str(numgs[i]))
-    ax_ns.plot(gs[-1], analytical_solution(n0s[-1], gs[-1]), '--')
+        if(numgs[i] in allowed_numgs):
+            plot_data(ax_ns, gs[i], ns[i][-1, :], 'plot', label='N=' + str(numgs[i]),linewidth=3)
+    ax_ns.plot(gs[-1], analytical_solution(n0s[-1], gs[-1]), '--',label='Solution',color='k', linewidth=3)
 
-    adjust_plot(ax_error, "Number of bins (N)", "Error", "Convergence at steady state")
-    adjust_plot(ax_ns, "$\gamma$", r"n $[cm^{-3}]$", "Steady State Solutions")
+    adjust_plot(ax_error, "Number of bins (N)", "Error", "")
+    adjust_plot(ax_ns, "$\gamma$", r"n $[cm^{-3}]$", "")
     adjust_plot(ax_eers, "$\gamma$", "Error", "Error Analysis")
     # adjust_plot(ax_nios, "Number of bins (N)", "Normalized Intensity", "Intensity Over Bins")
 
+    ax_ns.set_xlim([1e0,1e6])
+    ax_ns.set_ylim([1e-8,1e2])
+
+    ax_error.set_xlim([1e1, 1e3])
+    ax_error.set_ylim([1e-3, 1e1])
+
     add_legend(ax_ns)
-    plt.show()
+    add_legend(ax_error)
+    fig_ns.savefig("Figs/numg_convergence_n.pdf", dpi=800, bbox_inches="tight")
+    fig_ns.savefig("Figs/numg_convergence_n.png", dpi=800, bbox_inches="tight")
+    fig_error.savefig("Figs/numg_convergence_rate.pdf", dpi=800, bbox_inches="tight")
+    fig_error.savefig("Figs/numg_convergence_rate.png", dpi=800, bbox_inches="tight")
+    # plt.show()
 
 
 def run_time_test(numt,numg):
@@ -162,20 +176,19 @@ def get_error_analytic_time(ei, ef):
     return er, eers
 
 
-def plot_convergence_results_time(numts, numg, t):
+def plot_convergence_results_time(numts, numg, tt):
     results = []
     nios = []
     gmin, gmax = 1e4, 1e6
     n0 = 1  # get_n0(0, gmin, gmax)
-    ts = [5e-4, 1e-3, 5e-3, 1e-2]
     for mt in numts:
         g, n, tr = run_time_test(mt, numg)
-        tind = np.argmin(np.abs(tr - t))
+        tind = np.argmin(np.abs(tr - tt))
         ei = n[tind, :]
         norm = np.trapz(fp_test.eq_59_park1995(1e-4, g)*g*np.log(10),np.log10(g))
-        yt = np.array(fp_test.eq_59_park1995(t + 1e-4, g))
+        yt = np.array(fp_test.eq_59_park1995(tt + 1e-4, g))
         norm2 = np.trapz(yt,g)
-        ef = n0 * np.array(fp_test.eq_59_park1995(t + 1e-4, g)) / norm
+        ef = n0 * np.array(fp_test.eq_59_park1995(tt + 1e-4, g)) / norm
         nio = np.trapz(ei, g) / np.trapz(n[0, :], g)
         nios.append(nio)
         minargs = np.argsort(np.abs(ei - 1e-8))
@@ -199,63 +212,73 @@ def plot_convergence_results_time(numts, numg, t):
         er, eer = get_error_analytic_time(ei, ef)
         results.append((mt, er, eer, g, ei,ef))
 
-    plot_results(results, ts[-1], nios)
+    plot_results(results, tt, nios)
 
 
-def plot_results(results, t, nios, separate_figures=True):
+def plot_results(results, tt, nios, separate_figures=True):
     colors = ['tab:blue', 'tab:orange', 'tab:green', 'tab:red', 'tab:purple']
 
     if separate_figures:
-        figs = [plt.figure(figsize=(10, 5)) for _ in range(4)]
+        figs = [plt.figure(figsize=(8, 8)) for _ in range(4)]
         axs = [fig.add_subplot(111) for fig in figs]
     else:
         fig, axs = plt.subplots(4, 1, figsize=(10, 20))
     mts = []
     ers = []
+    allowed_numts =[25,50,100,800]
     for i, (mt, er, eer, eig, ei,ef) in enumerate(results):
         mts.append(mt)
         ers.append(er)
-        axs[0].scatter(mt, er, color=colors[i % len(colors)], label=f'MT={mt}')
+        axs[0].scatter(mt, er, color='blue',s=60)
         axs[1].scatter(eig, eer, color=colors[i % len(colors)], s=4)
-        axs[2].plot(eig, ei, label=f'Number of bins: {mt}')
+        if (mt in allowed_numts):
+            axs[2].plot(eig, ei, label='N=' + str(mt), linewidth=3)
         axs[3].scatter(mt, nios[i], color=colors[i % len(colors)])
 
     x_sol = results[-1][3]
     y_sol = results[-1][5]
-
+    scale_mult = 2
     axs[3].set_xscale('log')
-    axs[0].set_title(f"Convergence at t={t:.2E}")
-    axs[2].plot(x_sol,  y_sol, '--',
-                label='Analytic solution')
-    axs[0].plot(mts, ers[2] * (np.array(mts) /mts[2]) ** -1, label='$\propto N^{-1}$', color='black')
-    axs[2].set_ylim([1e-8, 2e-2])
+    axs[0].set_title(f"  t={tt:.2E}", y=0.98, pad=-14, loc='left', fontsize=10 * scale_mult)
+    axs[2].set_title(f"  t={tt:.2E}", y=0.98, pad=-14, loc='left', fontsize=10 * scale_mult)
+    axs[0].set_xlabel('Number of bins (N)', fontsize=10 * scale_mult)
+    axs[0].set_ylabel('Error', fontsize=10 * scale_mult)
+    axs[2].set_xlabel("$\gamma$", fontsize=10 * scale_mult)
+    axs[2].set_ylabel(r"n $[cm^{-3}]$", fontsize=10 * scale_mult)
+    axs[2].plot(x_sol,  y_sol, '--',label='Solution',color='k',linewidth=3)
+    axs[0].plot(np.logspace(1,3), ers[2] * (np.logspace(1,3) /mts[2]) ** -1,'--',linewidth=3, label='$\propto N^{-1}$', color='black')
+    axs[2].set_ylim([1e-8, 5e-2])
     axs[2].set_xlim([1e1, 1e4])
+    axs[0].set_xlim([10, 1e3])
+    axs[0].set_ylim([min(ers)/2, max(ers)*2])
+
+
 
     for ax in axs[:3]:
+        ax.tick_params(axis='both', which='major', size=12 * scale_mult, labelsize=12 * scale_mult)
+        ax.tick_params(axis='both', which='minor', size=0 * scale_mult, labelsize=0 * scale_mult)
         ax.set_yscale('log')
         ax.set_xscale('log')
-        ax.legend()
+        scale_mult = 2
+        ax.legend(loc='best', fontsize=12 * scale_mult, title_fontsize=12)
 
     # if separate_figures:
     #     for fig in figs:
     #         fig.savefig()
 
-    plt.show()
+    figs[2].savefig(f"Figs/numt_{tt:.2E}_convergence_n.pdf", dpi=800, bbox_inches="tight")
+    figs[2].savefig(f"Figs/numt_{tt:.2E}_convergence_n.png", dpi=800, bbox_inches="tight")
+    figs[0].savefig(f"Figs/numt_{tt:.2E}_convergence_rate.pdf", dpi=800, bbox_inches="tight")
+    figs[0].savefig(f"Figs/numt_{tt:.2E}_convergence_rate.png", dpi=800, bbox_inches="tight")
+
+    # plt.show()
 
 if __name__ == '__main__':
-    # garr = [25, 50, 100, 200, 400, 800, 1600, 3200]
-    # # garr = [100, 500, 3500]
-    # # garr = [20,50, 100,200,300,500]
-    # numtarr = [600]
-    # # numtarr = [200]
-    #
-    # convergence_plots_analytic(numtarr[0], garr)
-
-    # numtarr = [100, 300, 900]
-    numtarr = [100, 300,500]
-    # numtarr = [100, 200, 300, 400, 500, 600, 700, 800, 900, 1000, 1500]
-    garr = [900]
-    # garr = [200]
-    ts = [5e-4, 1e-3, 5e-3, 1e-2]
-    t = ts[3]
-    plot_convergence_results_time(numtarr, garr[0],t)
+    garr = [25,50, 100,200,400,800]
+    numtarr = [800]
+    convergence_plots_analytic(numtarr[0], garr)
+    numtarr = [25,50, 100,200,400,800]
+    garr = [800]
+    ts = [5e-3, 1e-2]
+    for t in ts:
+        plot_convergence_results_time(numtarr, garr[0],t)
