@@ -2,7 +2,7 @@ import matplotlib.pyplot as plt
 import paramo as para
 import numpy as np
 from paramo import constants as C
-from ic_dependencies import radiation_test as rt
+from dependencies import radiation_test as rt
 
 def run_test(num_g,num_f):
     p = 2
@@ -126,7 +126,7 @@ def plot_comparison_and_error():
     ax.set_xlim([5e7, 2e23])
     ax.set_ylim([1e-26, 1e-4])
     ax.set_xlabel('$\\nu$ [Hz]', fontsize=15 * scale_mult)
-    ax.set_ylabel('$j_\\nu$ [$\\frac{egs}{s \ cm^3}$]', fontsize=15 * scale_mult)
+    ax.set_ylabel('$j_\\nu$ [$\\frac{ergs}{s \ cm^3}$]', fontsize=15 * scale_mult)
     # ax.set_title('Plot Title', fontsize=18*scale_mult)
 
     ax.tick_params(axis='both', which='major', size=12 * scale_mult, labelsize=12 * scale_mult)

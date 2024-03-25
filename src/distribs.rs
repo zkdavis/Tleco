@@ -88,11 +88,6 @@ pub fn fp_findif_difu(dt_in: f64, g: &Array1<f64>, nin: &Array1<f64>, gdot_in: &
     let gdot = gdot_in.mapv(|x| x * tlc);
     let qq = qin.mapv(|x| x * tlc);
     let dd = din.mapv(|x| x * tlc);
-//     println!("ddsum: {}", dd.sum().to_string());
-//     if dd.sum() < 1e-150 {
-//         nout = fp_findif_cool(dt_in, g, nin,&gdot_in,&qin,tesc);
-//         nout
-//     }else{
     let mut dxp2 = Array1::<f64>::zeros(ng);
     let mut dxm2 = Array1::<f64>::zeros(ng);
     let mut cc_p2 = Array1::<f64>::zeros(ng);
