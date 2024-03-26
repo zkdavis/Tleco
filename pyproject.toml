@@ -3,9 +3,9 @@ requires = [ "maturin>=1.4,<2.0",]
 build-backend = "maturin"
 
 [project]
-name = "pyparamo"
+name = "paramo"
 version = "0.4.15"
-description = "Paramo stands for: PArticles and RAdiation MOnitor. In a few words: this code solves que Fokker-Planck equation and calculates synchrotron and inverse Compton emission."
+description = "Paramo stands for: PArticles and RAdiation MOnitor. In a few words: this code solves the Fokker-Planck equation and calculates synchrotron and inverse Compton emission."
 license = "GPL-3.0-only"
 requires-python = ">=3.9"
 classifiers = [ "Programming Language :: Rust", "Programming Language :: Python :: Implementation :: CPython", "Programming Language :: Python :: Implementation :: PyPy",]
@@ -24,9 +24,9 @@ module-name = "paramo"
 python-source = "pysrc"
 
 [tool.poetry]
-name = "pyparamo"
+name = "paramo"
 version = "0.4.15"
-description = "Paramo stands for: PArticles and RAdiation MOnitor. In a few words: this code solves que Fokker-Planck equation and calculates synchrotron and inverse Compton emission."
+description = "Paramo stands for: PArticles and RAdiation MOnitor. In a few words: this code solves the Fokker-Planck equation and calculates synchrotron and inverse Compton emission."
 authors = [ "Jesus M Rueda-Becerril <jm.ruebe@gmail.com>", "Zachary Davis <zachkdavis00@gmail.com>",]
 license = "GPL-3.0-only"
 
