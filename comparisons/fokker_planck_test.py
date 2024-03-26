@@ -232,7 +232,7 @@ def plot_results(results, tt, nios, separate_figures=True):
         axs[0].scatter(mt, er, color='blue',s=250)
         axs[1].scatter(eig, eer, color=colors[i % len(colors)], s=4)
         if (mt in allowed_numts):
-            axs[2].plot(eig, ei, label='N=' + str(mt), linewidth=3)
+            axs[2].plot(eig, ei, label='N=' + str(mt), linewidth=4)
         axs[3].scatter(mt, nios[i], color=colors[i % len(colors)])
 
     x_sol = results[-1][3]
@@ -245,8 +245,8 @@ def plot_results(results, tt, nios, separate_figures=True):
     axs[0].set_ylabel('Error', fontsize=10 * scale_mult)
     axs[2].set_xlabel("$\gamma$", fontsize=10 * scale_mult)
     axs[2].set_ylabel(r"n $[cm^{-3}]$", fontsize=10 * scale_mult)
-    axs[2].plot(x_sol,  y_sol, '--',label='Solution',color='k',linewidth=3)
-    axs[0].plot(np.logspace(1,3), ers[2] * (np.logspace(1,3) /mts[2]) ** -1,'--',linewidth=3, label='$\propto N^{-1}$', color='black')
+    axs[2].plot(x_sol,  y_sol, '--',label='Solution',color='k',linewidth=4)
+    axs[0].plot(np.logspace(1,3), ers[2] * (np.logspace(1,3) /mts[2]) ** -1,'--',linewidth=4, label='$\propto N^{-1}$', color='black')
     axs[2].set_ylim([1e-8, 5e-2])
     axs[2].set_xlim([1e1, 1e4])
     axs[0].set_xlim([10, 1e3])
@@ -259,7 +259,7 @@ def plot_results(results, tt, nios, separate_figures=True):
         ax.tick_params(axis='both', which='minor', size=0 * scale_mult, labelsize=0 * scale_mult)
         ax.set_yscale('log')
         ax.set_xscale('log')
-        scale_mult = 3
+        scale_mult = 2
         ax.legend(loc='best', fontsize=12 * scale_mult, title_fontsize=12)
 
     # if separate_figures:
