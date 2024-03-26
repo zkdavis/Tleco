@@ -46,7 +46,7 @@ def plot_data(ax, x_data, y_data, plot_type='scatter', **kwargs):
 
 
 def adjust_plot(ax, x_label, y_label, title):
-    scale_mult = 2
+    scale_mult = 3
     ax.set_xlabel(x_label,fontsize=10 * scale_mult)
     ax.set_ylabel(y_label, fontsize=10 * scale_mult)
     ax.set_title(title, y=1.0, pad=-14, loc='left')
@@ -116,15 +116,15 @@ def convergence_plots_analytic(numt, numgs):
     ax_nios.set_xscale('linear')
 
     xc2 = np.logspace(1, 3.8)
-    ax_error.plot(xc2, ys[2] * (xc2 / numgs[2]) ** -2, label='$\propto N^{-2}$',linestyle='--', color='black',linewidth=3)
+    ax_error.plot(xc2, ys[2] * (xc2 / numgs[2]) ** -2, label='$\propto N^{-2}$',linestyle='--', color='black',linewidth=4)
 
-    plot_data(ax_error, xs, ys, 'scatter',c='blue',s=60,marker='o')
+    plot_data(ax_error, xs, ys, 'scatter',c='blue',s=250,marker='o')
     allowed_numgs=[25,50,100,800]
     for i in range(len(gs)):
         plot_data(ax_eers, g2s[i], eers[i], 'scatter', s=4)
         if(numgs[i] in allowed_numgs):
-            plot_data(ax_ns, gs[i], ns[i][-1, :], 'plot', label='N=' + str(numgs[i]),linewidth=3)
-    ax_ns.plot(gs[-1], analytical_solution(n0s[-1], gs[-1]), '--',label='Solution',color='k', linewidth=3)
+            plot_data(ax_ns, gs[i], ns[i][-1, :], 'plot', label='N=' + str(numgs[i]),linewidth=4)
+    ax_ns.plot(gs[-1], analytical_solution(n0s[-1], gs[-1]), '--',label='Solution',color='k', linewidth=4)
 
     adjust_plot(ax_error, "Number of bins (N)", "Error", "")
     adjust_plot(ax_ns, "$\gamma$", r"n $[cm^{-3}]$", "")
@@ -229,7 +229,7 @@ def plot_results(results, tt, nios, separate_figures=True):
     for i, (mt, er, eer, eig, ei,ef) in enumerate(results):
         mts.append(mt)
         ers.append(er)
-        axs[0].scatter(mt, er, color='blue',s=60)
+        axs[0].scatter(mt, er, color='blue',s=250)
         axs[1].scatter(eig, eer, color=colors[i % len(colors)], s=4)
         if (mt in allowed_numts):
             axs[2].plot(eig, ei, label='N=' + str(mt), linewidth=3)
@@ -237,7 +237,7 @@ def plot_results(results, tt, nios, separate_figures=True):
 
     x_sol = results[-1][3]
     y_sol = results[-1][5]
-    scale_mult = 2
+    scale_mult = 3
     axs[3].set_xscale('log')
     axs[0].set_title(f"  t={tt:.2E}", y=0.98, pad=-14, loc='left', fontsize=10 * scale_mult)
     axs[2].set_title(f"  t={tt:.2E}", y=0.98, pad=-14, loc='left', fontsize=10 * scale_mult)
@@ -259,7 +259,7 @@ def plot_results(results, tt, nios, separate_figures=True):
         ax.tick_params(axis='both', which='minor', size=0 * scale_mult, labelsize=0 * scale_mult)
         ax.set_yscale('log')
         ax.set_xscale('log')
-        scale_mult = 2
+        scale_mult = 3
         ax.legend(loc='best', fontsize=12 * scale_mult, title_fontsize=12)
 
     # if separate_figures:
@@ -274,9 +274,9 @@ def plot_results(results, tt, nios, separate_figures=True):
     # plt.show()
 
 if __name__ == '__main__':
-    garr = [25,50, 100,200,400,800]
-    numtarr = [800]
-    convergence_plots_analytic(numtarr[0], garr)
+    # garr = [25,50, 100,200,400,800]
+    # numtarr = [800]
+    # convergence_plots_analytic(numtarr[0], garr)
     numtarr = [25,50, 100,200,400,800]
     garr = [800]
     ts = [5e-3, 1e-2]
