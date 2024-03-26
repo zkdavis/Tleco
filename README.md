@@ -16,6 +16,11 @@ Using and building with Paramo does not require any compiler. A rust compiler is
 ```console
 pip install paramo
 ```
+Paramo consist of both Rust functions and Python functions. Follow the example below to get access to correct functions:
+```python
+import paramo #paramo.rust_functions
+from paramo import constants as cons #from paramo gives access to the python files and functions
+```
 # Examples and Development
 
 Getting started with Paramo is straightforward and several examples can found in [Examples](https://github.com/zkdavis/PyParamo/blob/master/examples)].
@@ -24,7 +29,7 @@ Follow these instructions to run the example 'broken_pwl_law_full_example.py'.
 git clone https://github.com/yourusername/paramo.git
 cd paramo
 pip install -r requirements.txt
-pip isntall paramo
+pip install paramo
 python examples/broken_pwl_law_full_example.py
 ```
 
