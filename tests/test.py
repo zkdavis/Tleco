@@ -1,15 +1,15 @@
-import paramo as pp
+import tleco as tl
 import numpy as np
 
-pi = pp.get_pi()
+pi = tl.get_pi()
 print(pi)
 g = np.logspace(0,np.log10(1.5e8),300)
-betav = pp.bofg(g)
-betas = pp.bofg(g[27])
+betav = tl.bofg(g)
+betas = tl.bofg(g[27])
 print(betav)
 print(betas)
 
-n = pp.eq_59_park1995(5e-3, g)
+n = tl.eq_59_park1995(5e-3, g)
 
 import matplotlib.pyplot as plt
 

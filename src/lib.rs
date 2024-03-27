@@ -153,7 +153,7 @@ fn ic_iso_monochrome_full(freqs: Vec<f64>, uext: f64,nuext: f64, n: Vec<f64>, g:
 
 /// A Python module implemented in Rust.
 #[pymodule]
-fn paramo(_py: Python, m: &PyModule) -> PyResult<()> {
+fn tleco(_py: Python, m: &PyModule) -> PyResult<()> {
     m.add_function(wrap_pyfunction!(get_c, m)?)?;
     m.add_function(wrap_pyfunction!(gofb, m)?)?;
     m.add_function(wrap_pyfunction!(bofg, m)?)?;

@@ -2,7 +2,7 @@ import numpy as np
 import typing
 import scipy
 from scipy import integrate
-from paramo import constants as C, misc_func as mf
+from tleco import constants as C, misc_func as mf
 
 
 # Compton distribution function: see Dermer 6.75

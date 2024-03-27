@@ -2,10 +2,10 @@ import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.cm as cm
 import matplotlib.colors
-from paramo import misc_func
-from paramo import conversion_funcs as cf
-import paramo as para
-from paramo import constants as cons
+from tleco import misc_func
+from tleco import conversion_funcs as cf
+import tleco as para
+from tleco import constants as cons
 from tqdm import tqdm
 from ebltable.tau_from_model import OptDepth
 import sys
@@ -259,6 +259,7 @@ def n_plot(n, g, compare_fig=None):
             ax.set_ylim(1e-9, 1e4)
             ax.set_xlim(1e0, 1e7)
 
+    scale_mult = 3
     colors = cm.rainbow(np.linspace(0, 1, len(t_times_temp)))
     bounds = np.append(0, np.sort(t_times_temp))
     cmap = matplotlib.colors.ListedColormap(colors)
@@ -271,19 +272,19 @@ def n_plot(n, g, compare_fig=None):
     for i in np.append(0, plot_times):
         color = cmap(j / (len(plot_times) + 1))
         j += 1
-        ax.plot(g, n[i, :], color=color, lw=4)
+        ax.plot(g, n[i, :], color=color, linewidth=2 * scale_mult)
 
     cbar = plt.colorbar(sm, ax=ax, ticks=t_times_temp, pad=0)
-    cbar.set_label('$t / t_{acc}$', rotation=0, labelpad=25, fontsize=25)
+    cbar.set_label('$t / t_{acc}$', rotation=-90, labelpad=40, fontsize=15 * scale_mult)
     cbar.set_ticks(bounds[:-1] + (bounds[1:] - bounds[:-1]) / 2)
-    cbar.ax.set_yticklabels([f'{time / t_acc_temp:.2f}' for time in t_times_temp], fontsize=25)
-    cbar.ax.tick_params(size=13, width=2, labelsize=20)
+    cbar.ax.set_yticklabels([f'{time / t_acc_temp:.1f}' for time in t_times_temp],  fontsize=10 * scale_mult)
+    cbar.ax.tick_params(size=13, width=2, labelsize=10 * scale_mult)
 
-    ax.tick_params(axis='both', which='major', width=3, size=13, labelsize=25)
-    ax.tick_params(axis='both', which='minor', size=10, width=0)
+    ax.tick_params(axis='both', which='major', size=12 * scale_mult, labelsize=12 * scale_mult)
+    ax.tick_params(axis='both', which='minor', size=0 * scale_mult)
 
-    ax.set_xlabel(r"Lorentz Factor $\gamma$", fontsize=25)
-    ax.set_ylabel(r"Particle Distribution $n(\gamma)$ [cm$^{-3}$]", fontsize=25)
+    ax.set_xlabel(r"$\gamma$", fontsize=15 * scale_mult)
+    ax.set_ylabel(r"$n(\gamma)$ [cm$^{-3}$]", fontsize=15 * scale_mult)
     ax.set_title('')
 
     plt.tight_layout()
@@ -333,6 +334,7 @@ def nuFnu_plots(Im, nu, compare_fig):
         ax.set_xlim(1e18, 1e29)
         ax.set_ylim(1e-16, 1e-8)
 
+    scale_mult = 3
     colors = cm.rainbow(np.linspace(0, 1, len(t_times_temp)))
     bounds = np.append(0, np.sort(t_times_temp))
     cmap = matplotlib.colors.ListedColormap(colors)
@@ -349,19 +351,19 @@ def nuFnu_plots(Im, nu, compare_fig):
         color = cmap(j / (len(plot_times) + 1))
         j += 1
         nu_Fnu = atten * (dop_temp ** 4) * nu * (Im[i, :]) * (4 * np.pi * (R_temp ** 2)) / (4 * np.pi * (d_temp) ** 2)
-        ax.plot(dop_temp * nu, nu_Fnu, color=color, lw=4)
+        ax.plot(dop_temp * nu, nu_Fnu, color=color,  linewidth=2 * scale_mult)
 
-    ax.set_xlabel(r"$\nu$ [Hz]", fontsize=25)
-    ax.set_ylabel(r"$\nu F_{\nu}$ $[\frac{erg}{s cm^{2}}]$", fontsize=25)
+    ax.set_xlabel(r"$\nu$ [Hz]", fontsize=15 * scale_mult)
+    ax.set_ylabel(r"$\nu F_{\nu}$ $[\frac{erg}{s \ cm^{2}}]$", fontsize=15 * scale_mult)
 
     cbar = plt.colorbar(sm, ax=ax, ticks=t_times_temp, pad=0)
-    cbar.set_label('$t / t_{acc}$', rotation=0, labelpad=25, fontsize=25)
+    cbar.set_label('$t / t_{acc}$', rotation=-90, labelpad=25, fontsize=15 * scale_mult)
     cbar.set_ticks(bounds[:-1] + (bounds[1:] - bounds[:-1]) / 2)
-    cbar.ax.set_yticklabels([f'{time / t_acc_temp:.2f}' for time in t_times_temp], fontsize=25)
-    cbar.ax.tick_params(size=13, width=2, labelsize=20)
+    cbar.ax.set_yticklabels([f'{time / t_acc_temp:.1f}' for time in t_times_temp], fontsize=10 * scale_mult)
+    cbar.ax.tick_params(size=13, width=2, labelsize=10 * scale_mult)
 
-    ax.tick_params(axis='both', which='major', width=3, size=13, labelsize=25)
-    ax.tick_params(axis='both', which='minor', size=10, width=0)
+    ax.tick_params(axis='both', which='major', size=12 * scale_mult, labelsize=12 * scale_mult)
+    ax.tick_params(axis='both', which='minor', size=0 * scale_mult)
 
     plt.tight_layout()
     plt.savefig(f"Figs/{compare_fig}.png")

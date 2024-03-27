@@ -1,10 +1,10 @@
 [package]
-name = "paramo"
-version = "0.4.15"
+name = "tleco"
+version = "0.5.18"
 edition = "2021"
 
 [lib]
-name = "paramo"
+name = "tleco"
 crate-type = [ "cdylib",]
 
 [dependencies]

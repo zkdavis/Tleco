@@ -2,9 +2,9 @@ import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.cm as cm
 import matplotlib.colors
-import paramo as para
-from paramo import misc_func as mf
-from paramo import constants as cons
+import tleco as para
+from tleco import misc_func as mf
+from tleco import constants as cons
 ##Example injecting a broken power law into a blob that is cooled by synchrotron and ssc
 
 
