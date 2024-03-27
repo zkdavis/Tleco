@@ -99,7 +99,7 @@ def ic_mono_get_error(num_g,num_f,nu_bounds):
 def plot_comparison_and_error():
     num_g = 300#150
     num_f = 300#150
-    scale_mult = 3
+    scale_mult = 4
     nu_s, j_syn, j_syn_para = run_test(num_g=num_g, num_f=num_f)
 
     fig, ax = plt.subplots(figsize=(16, 12))
@@ -107,22 +107,22 @@ def plot_comparison_and_error():
     ax.set_xscale("log")
     ax.set_yscale("log")
 
-    ax.plot(nu_s, nu_s*j_syn_para, label='PARAMO', linewidth=2 * scale_mult, color='red')
-    ax.plot(nu_s, nu_s*j_syn, label='Dermer', linewidth=2 * scale_mult, linestyle='--', color='blue')
+    ax.plot(nu_s, nu_s*j_syn_para, label='PARAMO', linewidth=3 * scale_mult, color='red')
+    ax.plot(nu_s, nu_s*j_syn, label='Dermer', linewidth=3 * scale_mult, linestyle='--', color='blue')
 
     ax.set_xlim([2e5, 1e16])
     ax.set_ylim([1e-17, 1e-11])
     ax.set_xlabel('$\\nu$ [Hz]', fontsize=15 * scale_mult)
-    ax.set_ylabel('$\\nu j_\\nu$ [$\\frac{ergs}{s \ cm^3}$]', fontsize=15 * scale_mult)
+    ax.set_ylabel('$\\nu \ j_\\nu$ [$\\frac{ergs}{s \ cm^3}$]', fontsize=15 * scale_mult)
     # ax.set_title('Plot Title', fontsize=18*scale_mult)
 
     ax.tick_params(axis='both', which='major', size=12 * scale_mult, labelsize=12 * scale_mult)
     ax.tick_params(axis='both', which='minor', size=0 * scale_mult)
 
-    ax.legend(loc='upper left', fontsize=12 * scale_mult, title_fontsize=12)
+    ax.legend(loc='upper left', fontsize=12 * (scale_mult - 1), title_fontsize=12)
 
-    fig.savefig("Figs/syn_test.pdf", dpi=400, bbox_inches="tight")
-    fig.savefig("Figs/syn_test.png", dpi=400, bbox_inches="tight")
+    # fig.savefig("Figs/syn_test.pdf", dpi=800, bbox_inches="tight")
+    # fig.savefig("Figs/syn_test.png", dpi=800, bbox_inches="tight")
 
     error = np.abs((j_syn_para - j_syn) / j_syn)
 
