@@ -3,7 +3,7 @@
  Tleco: Tleco stands for both in the fire and rise in the nahuatl language. Tleco is a numerical code that simulates particles in relativistic plasma, and the rise of radiation from accelerating particles.
 
 ### Featured Publications:
-Tleco has already been used for several publications (previously called Tleco):
+Tleco has already been used for several publications (previously called Paramo):
 
 - Rueda-Becerril, J. M., Harrison, A. O., & Giannios, D.
 2021, MNRAS, 501, 4092, doi: 10.1093/mnras/staa3925
