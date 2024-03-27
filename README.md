@@ -1,42 +1,46 @@
-# Paramo
+# Tleco
 
-Paramo (PArticles and RAdiation MOnitor) is a toolkit for modeling relativistic outflows. This code solve the Fokker-Planck equation
-and calculates emission self consistently. A description of the code and its core algorithms can be found here (paper link.).
+ Tleco: Tleco stands for both in the fire and rise in the nahuatl language. Tleco is a numerical code that simulates particles in relativistic plasma, and the rise of radiation from accelerating particles.
 
 ### Featured Publications:
-Paramo has already been used for several publications:
-- Pub1
-- Pub2
+Tleco has already been used for several publications (previously called Tleco):
+
+- Rueda-Becerril, J. M., Harrison, A. O., & Giannios, D.
+2021, MNRAS, 501, 4092, doi: 10.1093/mnras/staa3925
+- Davis, Z., Rueda-Becerril, J. M., & Giannios, D. 2022,
+MNRAS, 513, 5766, doi: 10.1093/mnras/stac1282
+- Combi, L., & Siegel, D. M. 2023, ApJ, 944, 28,
+doi: 10.3847/1538-4357/acac29
 
 ## Installation
 
-Ensure you have Python 3.9 or later installed on your system. Paramo can be installed via pip and works on all major operating systems.
-Using and building with Paramo does not require any compiler. A rust compiler is necessary to develop Paramo.
+Ensure you have Python 3.9 or later installed on your system. Tleco can be installed via pip and works on all major operating systems.
+Using and building with Tleco does not require any compiler. A rust compiler is necessary to develop Tleco.
 
 ```console
-pip install paramo
+pip install tleco
 ```
-Paramo consist of both Rust functions and Python functions. Follow the example below to get access to correct functions:
+Tleco consist of both Rust functions and Python functions. Follow the example below to get access to correct functions:
 ```python
-import paramo #paramo.rust_functions
-from paramo import constants as cons #from paramo gives access to the python files and functions
+import tleco #tleco.rust_functions
+from tleco import constants as cons #from tleco gives access to the python files and functions
 ```
 # Examples and Development
 
-Getting started with Paramo is straightforward and several examples can found in [Examples](https://github.com/zkdavis/PyParamo/blob/master/examples)].
+Getting started with Tleco is straightforward and several examples can found in [Examples](https://github.com/zkdavis/Tleco/blob/master/examples)].
 Follow these instructions to run the example 'broken_pwl_law_full_example.py'.
 ```console
-git clone https://github.com/yourusername/paramo.git
-cd paramo
+git clone https://github.com/zkdavis/Tleco.git
+cd Tleco
 pip install -r requirements.txt
-pip install paramo
+pip install tleco
 python examples/broken_pwl_law_full_example.py
 ```
 
 
 ### Setting up a developer environment
 
-Contributors and developers are welcome to enhance Paramo's features or address issues. Following the steps above 
+Contributors and developers are welcome to enhance Tleco's features or address issues. Following the steps above 
 for running the broken power-law example will get you nearly ready for development. You will still need to install a
 rust compiler(https://www.rust-lang.org/tools/install). Once installed if any of the rust files are changed make sure to
 rebuild the object with maturin:
@@ -59,7 +63,7 @@ maturin develop
 This section is not complete and will be updated over time
 ### Rust Functions
 
-- **ic_iso_monochrome** - computes the emissivity($\frac{ergs}{cm^3 Sr}$) at frequency nuout(Hz) from inverse Compton (IC) scattering in an isotropic photon field assuming the photonfield is monochromatic [see in [src/radiation.rs:L356](https://github.com/zkdavis/PyParamo/blob/master/src/radiation.rs#L356)]
+- **ic_iso_monochrome** - computes the emissivity($\frac{ergs}{cm^3 Sr}$) at frequency nuout(Hz) from inverse Compton (IC) scattering in an isotropic photon field assuming the photonfield is monochromatic [see in [src/radiation.rs:L356](https://github.com/zkdavis/Tleco/blob/master/src/radiation.rs#L356)]
   - **Parameters:**
     - `nuout` (*f64*): frequency(Hz) in the comoving frame to compute emission at.
     - `uext` (*f64*): energy density($\frac{ergs}{cm^-3}$) of the external photon field in the comoving frame.
@@ -70,7 +74,7 @@ This section is not complete and will be updated over time
     - `jnu` (*f64*): emissivity($\frac{ergs}{cm^3 Sr}$) for frequency nuout
 
 
-- **ic_iso_monochrome_full** - computes the emissivity($\frac{ergs}{cm^3 Sr}$) from inverse Compton (IC) scattering in an isotropic photon field assuming the photonfield is monochromatic [see in [src/radiation.rs:L406](https://github.com/zkdavis/PyParamo/blob/master/src/radiation.rs#L406)]
+- **ic_iso_monochrome_full** - computes the emissivity($\frac{ergs}{cm^3 Sr}$) from inverse Compton (IC) scattering in an isotropic photon field assuming the photonfield is monochromatic [see in [src/radiation.rs:L406](https://github.com/zkdavis/Tleco/blob/master/src/radiation.rs#L406)]
   - **Parameters:**
     - `freqs` (*&Array1<f64>*): frequency(Hz) array in the comoving frame to compute emission over.
     - `uext` (*f64*): energy density($\frac{ergs}{cm^-3}$) of the external photon field in the comoving frame.
@@ -81,7 +85,7 @@ This section is not complete and will be updated over time
     - `jic` (*Array1<f64>*): emissivity($\frac{ergs}{cm^3 Sr}$) for frequency range freq
 
 
-- **rad_cool_pwl** - computes the radiative inverse Compton cooling ($\frac{\partial g}{\partial t}$ [$s^{-1}$]) from isotropic photon field uu($\frac{ergs}{cm^-3}$) [see in [src/radiation.rs:L502](https://github.com/zkdavis/PyParamo/blob/master/src/radiation.rs#L502)]
+- **rad_cool_pwl** - computes the radiative inverse Compton cooling ($\frac{\partial g}{\partial t}$ [$s^{-1}$]) from isotropic photon field uu($\frac{ergs}{cm^-3}$) [see in [src/radiation.rs:L502](https://github.com/zkdavis/Tleco/blob/master/src/radiation.rs#L502)]
   - **Parameters:**
     - `gg` (*&Array1<f64>*): Lorentz factor grid
     - `freqs` (*&Array1<f64>*): frequency(Hz) array in the comoving frame.
@@ -91,7 +95,7 @@ This section is not complete and will be updated over time
     - `dotg` (*Array1<f64>*): radiative cooling ($\frac{\partial g}{\partial t}$ [$s^{-1}$])
 
 
-- **rad_cool_mono** - computes the radiative inverse Compton cooling ($\frac{\partial g}{\partial t}$ [$s^{-1}$]) from isotropic monotonic photon field u0($\frac{ergs}{cm^-3}$) [see in [src/radiation.rs:L557](https://github.com/zkdavis/PyParamo/blob/master/src/radiation.rs#L557)]
+- **rad_cool_mono** - computes the radiative inverse Compton cooling ($\frac{\partial g}{\partial t}$ [$s^{-1}$]) from isotropic monotonic photon field u0($\frac{ergs}{cm^-3}$) [see in [src/radiation.rs:L557](https://github.com/zkdavis/Tleco/blob/master/src/radiation.rs#L557)]
   - **Parameters:**
     - `gg` (*&Array1<f64>*): Lorentz factor grid
     - `nu0` (*f64*): frequency(Hz) in the comoving frame of the photon field u0.
@@ -102,7 +106,7 @@ This section is not complete and will be updated over time
 
 ### Python Functions
 
-- **power_law** - Computes a power law function. [see in [pysrc/paramo/misc_func.py:L33](https://github.com/zkdavis/PyParamo/blob/master/pysrc/paramo/misc_func.py#L33)]
+- **power_law** - Computes a power law function. [see in [pysrc/tleco/misc_func.py:L33](https://github.com/zkdavis/Tleco/blob/master/pysrc/tleco/misc_func.py#L33)]
   - **Parameters:**
   - **Returns:**
     - `f` (**): Array of output values according to the power law.f = np.zeros_like(g)bounds = (g >= g_min) & (g <= g_max)f[bounds] = np.power(g, p)[bounds]if(normalize):f = f/np.trapz(f,g)return f*n0

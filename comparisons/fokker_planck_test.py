@@ -1,8 +1,8 @@
 import numpy as np
 import matplotlib.pyplot as plt
-from paramo import misc_func
+from tleco import misc_func
 from dependencies import fp_test
-import paramo as para
+import tleco as para
 
 
 def analytical_form(g):

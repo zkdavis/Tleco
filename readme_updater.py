@@ -318,7 +318,7 @@ def update_cargo_version_from_file(version_file_path='VERSION.txt', cargo_path='
 if __name__ == "__main__":
     repo_path = './'
     readme_path = os.path.join(repo_path, 'README.md')
-    repo_base_url = 'https://github.com/zkdavis/PyParamo'
+    repo_base_url = 'https://github.com/zkdavis/Tleco'
     script_filename = os.path.basename(__file__)
     extra_ignores = ['.git', '.gitignore', '.github', 'README.md',
                        'Cargo.lock', 'Cargo.toml', 'pyproject.toml',

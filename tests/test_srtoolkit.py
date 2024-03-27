@@ -1,7 +1,7 @@
 import numpy as np
 import pytest as pt
 
-import paramo as pp
+import tleco as pp
 
 class TestSpecRelaToolkit(object):
     def test_v_rela_s(self) -> None:

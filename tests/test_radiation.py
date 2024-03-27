@@ -1,4 +1,4 @@
-from paramo.comparisons import ic_bb_test,ic_mono_test
+from tleco.comparisons import ic_bb_test,ic_mono_test
 
 class TestRadiation(object):
     def test_rad_trans_blob(self) -> None:

@@ -1,7 +1,7 @@
 import matplotlib.pyplot as plt
-import paramo as para
+import tleco as para
 import numpy as np
-from paramo import constants as C
+from tleco import constants as C
 from dependencies import radiation_test as rt
 
 def run_test(num_g,num_f):

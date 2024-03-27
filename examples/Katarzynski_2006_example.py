@@ -2,10 +2,10 @@ import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.cm as cm
 import matplotlib.colors
-from paramo import misc_func
-from paramo import conversion_funcs as cf
-import paramo as para
-from paramo import constants as cons
+from tleco import misc_func
+from tleco import conversion_funcs as cf
+import tleco as para
+from tleco import constants as cons
 from tqdm import tqdm
 from ebltable.tau_from_model import OptDepth
 import sys

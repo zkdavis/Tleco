@@ -1,4 +1,4 @@
-import paramo as pp
+import tleco as pp
 import numpy as np
 
 pi = pp.get_pi()

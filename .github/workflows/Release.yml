@@ -11,6 +11,7 @@ on:
     branches:
       - main
       - master
+      - Preparing-of-1.0
 
 permissions:
   contents: write

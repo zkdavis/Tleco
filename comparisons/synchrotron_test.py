@@ -1,7 +1,6 @@
 import matplotlib.pyplot as plt
-import paramo as para
+import tleco as para
 import numpy as np
-from paramo import constants as C
 from dependencies import radiation_test as rt
 
 def run_test(num_g,num_f):
@@ -151,4 +150,4 @@ def plot_comparison_and_error():
 
 if __name__ == '__main__':
     plot_comparison_and_error()
-    # run_convergence_test([25,50,150,300,500,1000],[25,50,150,300,500,1000],[2e13,2.5e19])
+    run_convergence_test([25,50,150,300,500,1000],[25,50,150,300,500,1000],[2e13,2.5e19])
