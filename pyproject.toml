@@ -4,7 +4,7 @@ build-backend = "maturin"
 
 [project]
 name = "tleco"
-version = "0.5.18"
+version = "1.0.1"
 summary = "Tleco: Tleco stands for both in the fire and rise in the nahuatl language. Tleco is a numerical code that simulates particles in relativistic plasma, and the rise of radiation from accelerating particles."
 license = "GPL-3.0-only"
 requires-python = ">=3.9"
@@ -25,7 +25,7 @@ python-source = "pysrc"
 
 [tool.poetry]
 name = "tleco"
-version = "0.5.18"
+version = "1.0.1"
 description = "Tleco: Tleco stands for both in the fire and rise in the nahuatl language. Tleco is a numerical code that simulates particles in relativistic plasma, and the rise of radiation from accelerating particles."
 authors = [ "Jesus M Rueda-Becerril <jm.ruebe@gmail.com>", "Zachary Davis <zachkdavis00@gmail.com>",]
 license = "GPL-3.0-only"
