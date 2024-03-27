@@ -116,7 +116,7 @@ This section is not complete and will be updated over time
 
 The following Python packages are used in this project:
 
-- astropy 6.0.0
+- astropy 6.0.1
 - ebltable 0.5.2
 - matplotlib 3.8.3
 - numpy 1.26.4
