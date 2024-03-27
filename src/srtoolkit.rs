@@ -1,41 +1,24 @@
+/******************************************************************************
 
+Special Relativity toolkit
 
+******************************************************************************/
 pub mod srtoolkit {
-    // Assuming constants like cLight are defined in a constants module
     use crate::constants::*;
     use ndarray::Array1;
 
-    // bofg_s: Scalar version
-    pub fn bofg_s(g: f64) -> f64 {
-        if g <= 1.0 {
+    // Lorentz factor
+    pub fn v_rela(lorentz_factor: f64) -> f64 {
+        if lorentz_factor <= 1.0 {
             0.0
         } else {
-            (1.0 - 1.0 / (g * g)).sqrt()
+            (1.0 - 1.0 / (lorentz_factor.powi(2))).sqrt()
         }
     }
 
-    // bofg_v: Vector version
-    pub fn bofg_v(g: &[f64]) -> Vec<f64> {
-        g.iter()
-            .map(|&gi| {
-                if gi <= 1.0 {
-                    0.0
-                } else {
-                    (1.0 - 1.0 / (gi * gi)).sqrt()
-                }
-            })
-            .collect()
-    }
-
-
     // gofb_s: Scalar version
-    pub fn gofb_s(b: f64) -> f64 {
-        1.0 / (1.0 - b * b).sqrt()
-    }
-
-    // gofb_v: Vector version
-    pub fn gofb_v(b: &[f64]) -> Vec<f64> {
-        b.iter().map(|&bi| 1.0 / (1.0 - bi * bi).sqrt()).collect()
+    pub fn lorentz_f(beta: f64) -> f64 {
+        1.0 / (1.0 - beta.powi(2)).sqrt()
     }
 
     // pofg_s: Scalar version
@@ -83,17 +66,17 @@ pub mod srtoolkit {
 
     // Doppler
     pub fn doppler(gamma: f64, mu: f64) -> f64 {
-        1.0 / (gamma * (1.0 - bofg_s(gamma) * mu))
+        1.0 / (gamma * (1.0 - v_rela(gamma) * mu))
     }
 
     // mu_obs_f: Scalar version
     pub fn mu_obs_f(gamma: f64, muc: f64) -> f64 {
-        (muc + bofg_s(gamma)) / (1.0 + bofg_s(gamma) * muc)
+        (muc + v_rela(gamma)) / (1.0 + v_rela(gamma) * muc)
     }
 
     // mu_com_f: Scalar version
     pub fn mu_com_f(gamma: f64, muo: f64) -> f64 {
-        (muo - bofg_s(gamma)) / (1.0 - bofg_s(gamma) * muo)
+        (muo - v_rela(gamma)) / (1.0 - v_rela(gamma) * muo)
     }
 
     // nu_obs_s: Scalar version
@@ -138,13 +121,13 @@ pub mod srtoolkit {
 
     // x_com_s: Scalar version
     pub fn x_com_s(t: f64, tobs: f64, z: f64, gamma: f64, muo: f64) -> f64 {
-        CLIGHT * ((t / doppler(gamma, muo)) - (tobs / (1.0 + z))) / (gamma * (muo - bofg_s(gamma)))
+        CLIGHT * ((t / doppler(gamma, muo)) - (tobs / (1.0 + z))) / (gamma * (muo - v_rela(gamma)))
     }
 
     // x_com_v: Vector version
     pub fn x_com_v(t: &[f64], tobs: f64, z: f64, gamma: f64, muo: f64) -> Vec<f64> {
         t.iter().map(|&ti| {
-            CLIGHT * ((ti / doppler(gamma, muo)) - (tobs / (1.0 + z))) / (gamma * (muo - bofg_s(gamma)))
+            CLIGHT * ((ti / doppler(gamma, muo)) - (tobs / (1.0 + z))) / (gamma * (muo - v_rela(gamma)))
         }).collect()
     }
 

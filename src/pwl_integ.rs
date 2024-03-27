@@ -1,5 +1,3 @@
-// Assuming the required data types and constants (like PI) are defined in a separate module
-use crate::data_types::*;
 use crate::constants::*;
 
 // powlaw_integ function
@@ -81,7 +79,7 @@ pub fn get_g1(g2: f64, k: f64, q: f64) -> f64 {
     let eps = 1e-9;
     let mut xn = 100.0;
     let mut x = -1.0;
-    while ((xn - x) / x).abs() > ttol {
+    while (((xn - x) / x) as f64).abs() > ttol {
         x = xn;
         let f = x * pinteg(x, q - 1.0, eps) - g2 * k * pinteg(x, q, eps);
         let df = pinteg(x, q - 1.0, eps) + x.powf(2.0 - q) - g2 * k * x.powf(-q);

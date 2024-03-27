@@ -4,7 +4,7 @@ use std::option::Option;
 use scilib::math::bessel;
 use num::complex::Complex64;
 use crate::constants::*;
-use crate::SRtoolkit::srtoolkit::*;
+use crate::srtoolkit::srtoolkit::*;
 use crate::misc::*;
 use crate::specialf::*;
 
@@ -88,11 +88,6 @@ pub fn fp_findif_difu(dt_in: f64, g: &Array1<f64>, nin: &Array1<f64>, gdot_in: &
     let gdot = gdot_in.mapv(|x| x * tlc);
     let qq = qin.mapv(|x| x * tlc);
     let dd = din.mapv(|x| x * tlc);
-//     println!("ddsum: {}", dd.sum().to_string());
-//     if dd.sum() < 1e-150 {
-//         nout = fp_findif_cool(dt_in, g, nin,&gdot_in,&qin,tesc);
-//         nout
-//     }else{
     let mut dxp2 = Array1::<f64>::zeros(ng);
     let mut dxm2 = Array1::<f64>::zeros(ng);
     let mut cc_p2 = Array1::<f64>::zeros(ng);
@@ -104,6 +99,7 @@ pub fn fp_findif_difu(dt_in: f64, g: &Array1<f64>, nin: &Array1<f64>, gdot_in: &
     dxp2[ng-1]= dxp2[ng - 2];
     dxm2.slice_mut(s![1..]).assign(&dxp2.slice(s![..(ng-1)]));
     dxm2[0]= dxm2[1];
+
     let dx = (&dxp2 + &dxm2) * 0.5;
 
     cc_p2.slice_mut(s![..ng-1]).assign( &((&dd.slice(s![1..]) + &dd.slice(s![..ng-1]))* 0.25));
@@ -155,20 +151,10 @@ pub fn fp_findif_difu(dt_in: f64, g: &Array1<f64>, nin: &Array1<f64>, gdot_in: &
         };
     }
 
-//     let zz_p2 = ww_p2.map(|&w| if w * 0.5 > 200.0 { 200.0 } else if w * 0.5 < -200.0 { -200.0 } else { w * 0.5 });
-//     let zz_m2 = ww_m2.map(|&w| if w * 0.5 > 200.0 { 200.0 } else if w * 0.5 < -200.0 { -200.0 } else { w * 0.5 });
-//
-//     let yy_p2 = zz_p2.map(|&z| if z.abs() < 0.1 { 1.0 - z.powi(2) / 24.0 + 7.0 * z.powi(4) / 5760.0 - 31.0 * z.powi(6) / 967680.0 } else { z.abs() * (-z.abs()).exp() / (1.0 - (-2.0 * z.abs()).exp()) });
-//     let yy_m2 = zz_m2.map(|&z| if z.abs() < 0.1 { 1.0 - z.powi(2) / 24.0 + 7.0 * z.powi(4) / 5760.0 - 31.0 * z.powi(6) / 967680.0 } else { z.abs() / (z.abs().exp() - (-z.abs()).exp()) });
-
     let r = nin + dt * &qq;
     let a = -dt * &cc_m2 * &yy_m2 * (-&zz_m2).mapv(f64::exp) / (&dx * &dxm2);
     let b = 1.0 + dt * (&cc_p2 * &yy_p2 * (-&zz_p2).mapv(f64::exp) / &dxp2 + &cc_m2 * &yy_m2 * &zz_m2.mapv(f64::exp) / &dxm2) / &dx + dt / tesc;
     let c = -dt * &cc_p2 * &yy_p2 * &zz_p2.mapv(f64::exp) / (&dx * &dxp2);
-
-
-
-
 
     let nout = tridag_ser(&a.slice(s![1..]).to_owned(), &b, &c.slice(s![..ng-1]).to_owned(), &r);
 

@@ -207,30 +207,26 @@ pub fn tridag_ser(a: &Array1<f64>, b: &Array1<f64>, c: &Array1<f64>, r: &Array1<
 }
 
 
-pub fn trapzd_w2arg<F>(func: F, a: f64, b: f64, s: &mut f64, n: u32, p: f64)
-where
-    F: Fn(&[f64], f64) -> Vec<f64>,
-{
-    let it = 2_u32.pow(n - 2);
-    let del = (b - a) / it as f64;
+pub fn trapzd_w2arg(funci: Option<fn(f64, f64) -> f64>, a: f64, b: f64, s: &mut f64, n: u32, p: f64){
+
+    let func = funci.unwrap();
 
     if n == 1 {
         let values = vec![a, b];
-        let func_results = func(&values, p);
+        let func_results: Vec<f64> = values.iter().map(|&v| func(v,p)).collect();
         *s = 0.5 * (b - a) * func_results.iter().sum::<f64>();
     } else {
+        let it = 2_u32.pow(n - 2);
+        let del = (b - a) / it as f64;
         let values: Vec<f64> = (0..it).map(|i| a + (i as f64 + 0.5) * del).collect();
-        let func_results = func(&values, p);
+        let func_results: Vec<f64> = values.iter().map(|&v| func(v,p)).collect();
         let fsum: f64 = func_results.iter().sum();
         *s = 0.5 * (*s + del * fsum);
     }
 }
 
 
-pub fn qromb_w2arg<F>(func: F, a: f64, b: f64, p: f64) -> Result<f64, &'static str>
-where
-    F: Fn(&[f64], f64) -> Vec<f64>,
-{
+pub fn qromb_w2arg(func: Option<fn(f64, f64) -> f64>, a: f64, b: f64, p: f64) -> Result<f64, &'static str>{
     const JMAX: usize = 20;
     const K: usize = 5;
     const EPS: f64 = 1e-5;
@@ -238,8 +234,9 @@ where
     let mut h = vec![1.0; JMAX + 1];
     let mut s = vec![0.0; JMAX + 1];
 
+
     for j in 1..=JMAX {
-        trapzd_w2arg(&func, a, b, &mut s[j - 1], j as u32, p);
+        trapzd_w2arg(func, a, b, &mut s[j - 1], j as u32, p);
 
         if j >= K {
             let (qromb, dqromb) = polint(&h[j - K..j], &s[j - K..j], 0.0)?;
