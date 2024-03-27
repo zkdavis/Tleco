@@ -1,5 +1,5 @@
 import matplotlib.pyplot as plt
-import tleco as para
+import tleco as tl
 import numpy as np
 from dependencies import radiation_test as rt
 
@@ -12,7 +12,7 @@ def run_test(num_g,num_f):
     g_array = np.logspace(1, 3, num_g)
     n_array = n0*(g_array ** -p) / np.trapz(g_array ** -p, g_array)
     j_syn = rt.j_syn_explicit(nu_s,B,n_array,g_array)
-    j_syn_para = np.array(para.syn_emissivity_full(nu_s,g_array,n_array,B,False))[0]
+    j_syn_para = np.array(tl.syn_emissivity_full(nu_s,g_array,n_array,B,False))[0]
 
     return nu_s,j_syn, j_syn_para
 

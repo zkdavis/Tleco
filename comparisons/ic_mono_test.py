@@ -1,5 +1,5 @@
 import matplotlib.pyplot as plt
-import tleco as para
+import tleco as tl
 import numpy as np
 from tleco import constants as C
 from dependencies import radiation_test as rt
@@ -15,7 +15,7 @@ def run_test(num_g,num_f):
     g_array = np.logspace(1, 3, num_g)
     n_array = n0*(g_array ** -p) / np.trapz(g_array ** -p, g_array)
     j_ic = rt.j_ic_mono_pwl_electron_dermer_full(eps_s, eps_in, u0, p, n_array, g_array)
-    j_ic_para = np.array(para.ic_iso_monochrome_full(nu_s,u0,nu_in,n_array, g_array))
+    j_ic_para = np.array(tl.ic_iso_monochrome_full(nu_s, u0, nu_in, n_array, g_array))
 
     return nu_s,j_ic, j_ic_para
 

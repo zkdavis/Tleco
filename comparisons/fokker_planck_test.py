@@ -2,7 +2,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from tleco import misc_func
 from dependencies import fp_test
-import tleco as para
+import tleco as tl
 
 
 def analytical_form(g):
@@ -81,7 +81,7 @@ def run_test(numg, numt, n0):
 
     for i in range(1, numt):
         dt = t[i] - t[i - 1]
-        n1[i, :] = para.fp_findif_difu(dt, g, n1[i - 1, :], gdot1[i - 1, :], D1, np.zeros_like(D1), 1e200, tlc, False)
+        n1[i, :] = tl.fp_findif_difu(dt, g, n1[i - 1, :], gdot1[i - 1, :], D1, np.zeros_like(D1), 1e200, tlc, False)
         gdot1[i, :] = gdot1[0, :]
 
     return g, n1
@@ -162,7 +162,7 @@ def run_time_test(numt,numg):
 
     for i in range(1, numt):
         dt = t[i] - t[i - 1]
-        n1[i, :] = para.fp_findif_difu(dt, g, n1[i - 1, :], gdot1[i - 1, :], D1, np.zeros_like(D1), 1e0, tlc, False)
+        n1[i, :] = tl.fp_findif_difu(dt, g, n1[i - 1, :], gdot1[i - 1, :], D1, np.zeros_like(D1), 1e0, tlc, False)
         gdot1[i, :] = gdot1[0, :]
 
     return g, n1, t
