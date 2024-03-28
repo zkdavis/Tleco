@@ -63,10 +63,11 @@ def j_ic_iso_full_dermer(eps_s_array: [float], eps_array: [float], u: typing.Cal
     return j_ic
 
 
-# 2.58 Blumenthal Gould 1970
-def BB_photon_density(eps_array, Temp):
-    fcon = ((np.pi ** 2) * ((C.hPlanck / (2 * np.pi)) ** 3) * (C.cLight ** 3)) ** (-1)
-    f = (eps_array ** 2) * ((np.exp(eps_array / (C.kBoltz * Temp)) - 1) ** (-1))
+# 5.14 Dermer 2009
+def BB_energy_density(eps_array, Temp):
+    nu = eps_array/C.hPlanck
+    fcon = 8*np.pi*C.hPlanck*(nu**3)/(C.cLight**3)
+    f = 1/(np.exp(eps_array / (C.kBoltz * Temp)) - 1)
     return fcon * f
 
 

@@ -104,6 +104,8 @@ def plot_comparison_and_error():
     scale_mult = 4
     nu_s, j_ic, j_ic_para = run_test(num_g=num_g, num_f=num_f)
 
+    print(np.trapz(j_ic,nu_s))
+
     fig, ax = plt.subplots(figsize=(16, 12))
 
     ax.set_xscale("log")
