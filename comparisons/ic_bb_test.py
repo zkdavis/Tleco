@@ -124,7 +124,7 @@ def plot_comparison_and_error():
     ax.plot(nu_s, j_ic, label='Dermer', linewidth=3 * scale_mult, linestyle='--', color='blue')
 
     ax.set_xlim([5e7, 2e23])
-    ax.set_ylim([1e-24, 1e-4])
+    ax.set_ylim([1e-22, 2e-4])
     ax.set_xlabel('$\\nu$ [Hz]', fontsize=15 * scale_mult)
     ax.set_ylabel('$j_\\nu$ [$\\frac{ergs}{s \ Hz \ cm^3}$]', fontsize=15 * scale_mult)
     # ax.set_title('Plot Title', fontsize=18*scale_mult)
