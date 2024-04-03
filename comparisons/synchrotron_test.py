@@ -11,8 +11,8 @@ def run_test(num_g,num_f):
     B=np.sqrt(np.pi*8*ub)
     g_array = np.logspace(1, 3, num_g)
     n_array = n0*(g_array ** -p) / np.trapz(g_array ** -p, g_array)
-    j_syn = rt.j_syn_explicit(nu_s,B,n_array,g_array)
-    j_syn_para = np.array(tl.syn_emissivity_full(nu_s,g_array,n_array,B,False))[0]
+    j_syn = rt.j_syn_explicit(nu_s,B,n_array,g_array) * 4*np.pi
+    j_syn_para = np.array(tl.syn_emissivity_full(nu_s,g_array,n_array,B,False))[0] * 4*np.pi
 
     return nu_s,j_syn, j_syn_para
 
@@ -100,7 +100,7 @@ def plot_comparison_and_error():
     num_f = 300#150
     scale_mult = 4
     nu_s, j_syn, j_syn_para = run_test(num_g=num_g, num_f=num_f)
-
+    print(np.trapz(j_syn, nu_s))
     fig, ax = plt.subplots(figsize=(16, 12))
 
     ax.set_xscale("log")
@@ -109,8 +109,8 @@ def plot_comparison_and_error():
     ax.plot(nu_s, nu_s*j_syn_para, label='PARAMO', linewidth=3 * scale_mult, color='red')
     ax.plot(nu_s, nu_s*j_syn, label='Dermer', linewidth=3 * scale_mult, linestyle='--', color='blue')
 
-    ax.set_xlim([2e5, 1e16])
-    ax.set_ylim([1e-17, 1e-11])
+    ax.set_xlim([2e5, 1e15])
+    ax.set_ylim([2e-16, 1e-10])
     ax.set_xlabel('$\\nu$ [Hz]', fontsize=15 * scale_mult)
     ax.set_ylabel('$\\nu \ j_\\nu$ [$\\frac{ergs}{s \ cm^3}$]', fontsize=15 * scale_mult)
     # ax.set_title('Plot Title', fontsize=18*scale_mult)
@@ -150,4 +150,4 @@ def plot_comparison_and_error():
 
 if __name__ == '__main__':
     plot_comparison_and_error()
-    run_convergence_test([25,50,150,300,500,1000],[25,50,150,300,500,1000],[2e13,2.5e19])
+    # run_convergence_test([25,50,150,300,500,1000],[25,50,150,300,500,1000],[2e13,2.5e19])

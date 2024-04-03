@@ -364,7 +364,7 @@ checksum = "69758bda2e78f098e4ccb393021a0963bb3442eac05f135c30f61b7370bbafae"
 
 [[package]]
 name = "tleco"
-version = "0.4.17"
+version = "0.5.18"
 dependencies = [
  "ndarray",
  "num",

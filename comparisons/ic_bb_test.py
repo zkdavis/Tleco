@@ -2,13 +2,13 @@ import matplotlib.pyplot as plt
 import tleco as tl
 import numpy as np
 from tleco import constants as C
+from tleco import conversion_funcs as cf
 from dependencies import radiation_test as rt
 
 def run_test(num_g,num_f):
     p = 2
     n0 =1
-    sig_T = 0.0001
-    Temp = sig_T*C.energy_e/C.kBoltz
+    Temp = cf.ev2ergs(2)/C.kBoltz
     u_bb = 1e0
     nu_s = np.logspace(8, 25, num_f)
     nu_s2 = np.logspace(8, 25, num_f)
@@ -17,11 +17,13 @@ def run_test(num_g,num_f):
     n_array = n0*(g_array ** -p) / np.trapz(g_array ** -p, g_array)
 
     def ub(epsa):
-        return rt.BB_photon_density(epsa,Temp)*epsa*u_bb/np.trapz(rt.BB_photon_density(epsa,Temp)*epsa,epsa)
+        # return rt.BB_photon_density(epsa,Temp)*epsa*u_bb/np.trapz(rt.BB_photon_density(epsa,Temp)*epsa,epsa)
+        return rt.BB_energy_density(epsa, Temp) * u_bb / np.trapz(rt.BB_energy_density(epsa, Temp), epsa/C.hPlanck)
 
     def ub_dermer(epsa):
         epsa = epsa * C.energy_e
-        return rt.BB_photon_density(epsa, Temp) * epsa * u_bb / np.trapz(rt.BB_photon_density(epsa, Temp) * epsa, epsa)
+        # return rt.BB_photon_density(epsa, Temp) * epsa * u_bb / np.trapz(rt.BB_photon_density(epsa, Temp) * epsa, epsa)
+        return rt.BB_energy_density(epsa, Temp) * u_bb / np.trapz(rt.BB_energy_density(epsa, Temp), epsa/C.hPlanck)
 
 
     j_ic = rt.j_ic_iso_full_dermer(eps_s, eps_s,ub_dermer, n_array, g_array)
@@ -115,6 +117,8 @@ def plot_comparison_and_error():
     scale_mult = 4
     nu_s, j_ic, j_ic_para = run_test(num_g=num_g, num_f=num_f)
 
+    print(np.trapz(j_ic, nu_s))
+
     fig, ax = plt.subplots(figsize=(16, 12))
 
     ax.set_xscale("log")
@@ -123,8 +127,8 @@ def plot_comparison_and_error():
     ax.plot(nu_s, j_ic_para, label='PARAMO', linewidth=3 * scale_mult, color='red')
     ax.plot(nu_s, j_ic, label='Dermer', linewidth=3 * scale_mult, linestyle='--', color='blue')
 
-    ax.set_xlim([5e7, 2e23])
-    ax.set_ylim([1e-26, 1e-4])
+    ax.set_xlim([1e10, 1e23])
+    ax.set_ylim([1e-40, 2e-29])
     ax.set_xlabel('$\\nu$ [Hz]', fontsize=15 * scale_mult)
     ax.set_ylabel('$j_\\nu$ [$\\frac{ergs}{s \ Hz \ cm^3}$]', fontsize=15 * scale_mult)
     # ax.set_title('Plot Title', fontsize=18*scale_mult)
@@ -162,4 +166,4 @@ def plot_comparison_and_error():
 
 if __name__ == '__main__':
     plot_comparison_and_error()
-    run_convergence_test([150,300,500],[150,300,500],[5e8,5e22])
+    # run_convergence_test([150,300,500],[150,300,500],[5e8,5e22])
