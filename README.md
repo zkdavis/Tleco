@@ -117,7 +117,7 @@ The following Python packages are used in this project:
 - matplotlib 3.8.3
 - numpy 1.26.4
 - pytest 8.1.1
-- scipy 1.12.0
+- scipy 1.13.0
 - toml 0.10.2
 - tqdm 4.66.2
 - maturin 1.5
