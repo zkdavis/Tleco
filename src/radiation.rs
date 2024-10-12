@@ -307,7 +307,7 @@ pub fn ic_iso_powlaw(nuout: f64, nu: &Array1<f64>, inu: &Array1<f64>, n: &Array1
                         if w1 > w2 {
                              let emis = if 0.25 < f1 && f1 < g[k].powi(2) {
                                 sscg1iso(gmx_star.powi(-2), g[k].powi(-2), w2, w1, s1, s2)
-                            } else if f1 <= g[k].powi(2) && f2 <= g[k].powi(2) {
+                            } else if f1 >= g[k].powi(2) && f2 <= g[k].powi(2) {
                                 sscg1iso(gmx_star.powi(-2), g[k].powi(-2), w2, g[k].powi(2), s1, s2)
                                 + sscg2iso(gmx_star.powi(-2), 1.0, g[k].powi(2), w1, s1, s2)
                             } else if f2 <= gmx_star.powi(2) && f2 > g[k].powi(2) {

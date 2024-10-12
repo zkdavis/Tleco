@@ -106,7 +106,7 @@ def plot_comparison_and_error():
     ax.set_xscale("log")
     ax.set_yscale("log")
 
-    ax.plot(nu_s, nu_s*j_syn_para, label='PARAMO', linewidth=3 * scale_mult, color='red')
+    ax.plot(nu_s, nu_s*j_syn_para, label='TLECO', linewidth=3 * scale_mult, color='red')
     ax.plot(nu_s, nu_s*j_syn, label='Dermer', linewidth=3 * scale_mult, linestyle='--', color='blue')
 
     ax.set_xlim([2e5, 1e15])
@@ -130,7 +130,7 @@ def plot_comparison_and_error():
     ax2.set_xscale("log")
     ax2.set_yscale("log")
 
-    ax2.plot(nu_s, error, label='$\\frac{\\text{|PARAMO - Dermer|}}{\\text{|Dermer|}}$', linewidth=2 * scale_mult, linestyle=':', color='green')
+    ax2.plot(nu_s, error, label='$\\frac{\\text{|TLECO - Dermer|}}{\\text{|Dermer|}}$', linewidth=2 * scale_mult, linestyle=':', color='green')
 
     ax2.set_xlim([2e12, 1e20])
     ax2.set_xlabel('$\\nu$ [Hz]', fontsize=15 * scale_mult)
