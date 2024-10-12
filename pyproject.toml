@@ -31,7 +31,7 @@ authors = [ "Jesus M Rueda-Becerril <jm.ruebe@gmail.com>", "Zachary Davis <zachk
 license = "GPL-3.0-only"
 
 [tool.poetry.dependencies]
-python = "^3.9"
+python = "^3.10"
 astropy = "6.0.1"
 matplotlib = "3.8.3"
 numpy = "1.26.4"
