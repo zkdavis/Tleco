@@ -10,7 +10,7 @@ Tleco has already been used for several publications (previously called Paramo):
 
 ## Installation
 
-Ensure you have Python 3.9 or later installed on your system. Tleco can be installed via pip and works on all major operating systems.
+Ensure you have Python 3.10 or later installed on your system. Tleco can be installed via pip and works on all major operating systems.
 Using and building with Tleco does not require any compiler. A rust compiler is necessary to develop Tleco.
 
 ```console
