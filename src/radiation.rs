@@ -95,14 +95,14 @@ pub fn rma_qromb(chi: f64, q_gamma_index: f64, log_gamma_a: f64, log_gamma_b: f6
         }
     }
 
-    println!("RMA_qromb error");
-    println!("chi    = {}", chi);
-    println!("q      = {}", q_gamma_index);
-    println!("ga     = {}", log_gamma_a.exp());
-    println!("gb     = {}", log_gamma_b.exp());
-    println!("qromb  = {}", qromb);
-    println!("dqromb = {}", dqromb);
-    eprint!("RMA_qromb: too many steps");
+    eprintln!("RMA_qromb error");
+    eprintln!("chi    = {}", chi);
+    eprintln!("q      = {}", q_gamma_index);
+    eprintln!("ga     = {}", log_gamma_a.exp());
+    eprintln!("gb     = {}", log_gamma_b.exp());
+    eprintln!("qromb  = {}", qromb);
+    eprintln!("dqromb = {}", dqromb);
+    eprintln!("RMA_qromb: too many steps");
 
     qromb
 }
@@ -263,7 +263,9 @@ pub fn arma_trapzd(chi: f64,q: f64,lga: f64,lgb: f64,s: &mut f64,n: usize, rma_f
         let mut fsum = 0.0;
         for _i in 0..it {
             eg = lg.exp();
-            fsum += eg.powf(-q) * func(chi, eg) * (q + 1.0 + eg.powi(2) / (eg.powi(2) - 1.0));
+            let denom = eg.powi(2) - 1.0;
+            if denom < 1e-10 { lg += del; continue; }
+            fsum += eg.powf(-q) * func(chi, eg) * (q + 1.0 + eg.powi(2) / denom);
             lg += del;
         }
         *s = 0.5 * (*s + del * fsum);

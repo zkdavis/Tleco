@@ -88,6 +88,13 @@ pub fn fp_findif_difu(dt_in: f64, g: &Array1<f64>, nin: &Array1<f64>, gdot_in: &
     let gdot = gdot_in.mapv(|x| x * tlc);
     let qq = qin.mapv(|x| x * tlc);
     let dd = din.mapv(|x| x * tlc);
+
+    // When diffusion is negligible, fall back to the pure cooling scheme to avoid
+    // the weights (ww_p2, ww_m2) dividing by zero (cc_p2, cc_m2 ~ 0).
+    if dd.sum() < 1e-150 {
+        return fp_findif_cool(dt_in, g, nin, gdot_in, qin, tesc_in);
+    }
+
     let mut dxp2 = Array1::<f64>::zeros(ng);
     let mut dxm2 = Array1::<f64>::zeros(ng);
     let mut cc_p2 = Array1::<f64>::zeros(ng);
