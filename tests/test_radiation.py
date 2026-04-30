@@ -151,13 +151,12 @@ class TestRadCoolMono:
         dotg = tleco.rad_cool_mono(G, 1e14, 1e-3, False)
         assert all(v >= 0.0 for v in dotg)
 
-    def test_thomson_scales_as_momentum(self):
-        # In the Thomson limit (xi << 1) the code computes dotg ∝ p = sqrt(γ²-1).
-        # For γ >> 1, p ≈ γ, so doubling γ ≈ doubles the cooling rate.
+    def test_thomson_scales_as_p_squared(self):
+        # In the Thomson limit (xi << 1) the code computes dotg ∝ p² = γ²-1.
         g_test = [100.0, 200.0, 400.0]
         dotg = tleco.rad_cool_mono(g_test, 1e6, 1e-3, False)
-        expected_01 = math.sqrt(200.0**2 - 1.0) / math.sqrt(100.0**2 - 1.0)
-        expected_12 = math.sqrt(400.0**2 - 1.0) / math.sqrt(200.0**2 - 1.0)
+        expected_01 = (200.0**2 - 1.0) / (100.0**2 - 1.0)
+        expected_12 = (400.0**2 - 1.0) / (200.0**2 - 1.0)
         assert dotg[1] / dotg[0] == pytest.approx(expected_01, rel=1e-4)
         assert dotg[2] / dotg[1] == pytest.approx(expected_12, rel=1e-4)
 
