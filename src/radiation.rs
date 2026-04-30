@@ -573,15 +573,20 @@ pub fn rad_cool_mono(gg: &Array1<f64>, nu0: f64, u0: f64, with_kn: bool) -> Arra
         .map(|i| {
             let g = gg[i];
             let xi = xi0[i];
+            let p2 = pofg_s(g).powi(2);  // p² = γ²−1, exact relativistic momentum squared
             if with_kn {
                 match xi {
-                    x if x >= 1e2 => urad_const * u0 * pofg_s(g) * 4.5 * (x.ln() - 11.0 / 6.0) / x.powi(2),
-                    x if x >= 1.0 => urad_const * u0 * pofg_s(g) * (-1.01819432 - 0.67980349 * x.ln() - 0.14948459 * x.ln().powi(2) + 0.00627589 * x.ln().powi(3)).exp(),
-                    x if x > 1e-3 => urad_const * u0 * pofg_s(g) * (1.0 + x).powf(-1.5),
-                    _ => urad_const * u0 * pofg_s(g),
+                    // Deep KN: analytic asymptotic; formula is valid only for γ>>1 so γ²≈p² here
+                    x if x >= 1e2 => urad_const * u0 * g.powi(2) * 4.5 * (x.ln() - 11.0 / 6.0) / x.powi(2),
+                    // Intermediate KN (1 ≤ ξ < 100): cubic log-polynomial fit (Rueda-Becerril 2021)
+                    x if x >= 1.0 => urad_const * u0 * p2 * (-1.01819432 - 0.67980349 * x.ln() - 0.14948459 * x.ln().powi(2) + 0.00627589 * x.ln().powi(3)).exp(),
+                    // Transition (10⁻³ ≤ ξ < 1): exact head-on cross-section correction
+                    x if x > 1e-3 => urad_const * u0 * p2 * (1.0 + x).powf(-1.5),
+                    // Thomson limit
+                    _ => urad_const * u0 * p2,
                 }
             } else {
-                urad_const * u0 * pofg_s(g)
+                urad_const * u0 * p2
             }
         })
         .collect();
