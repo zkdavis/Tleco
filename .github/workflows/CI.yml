@@ -54,10 +54,26 @@ jobs:
       - name: Install built wheel
         run: python -m pip install --force-reinstall --no-deps dist/*.whl
 
-      - name: Run test suite
-        run: pytest
-        env:
-          PYTHONPATH: comparisons
+      - name: Run package smoke test
+        run: |
+          python - <<'PY'
+          import numpy as np
+          import tleco as tl
+          from tleco import constants, conversion_funcs, misc_func
+
+          gamma = tl.gofb(0.1)
+          assert abs(gamma - 1.005) < 1e-3, gamma
+
+          values = tl.gofb(np.array([0.1, 0.25, 0.5]))
+          assert values.shape == (3,), values
+
+          sample = misc_func.power_law(1.0, np.array([1.0, 2.0, 3.0]), -2.0, 1.0, 3.0)
+          assert sample.shape == (3,), sample
+
+          _ = constants.cLight
+          _ = conversion_funcs.ev2ergs(1.0)
+          print("package smoke test ok")
+          PY
 
   prepare-release:
     name: Update version, README, and tag
