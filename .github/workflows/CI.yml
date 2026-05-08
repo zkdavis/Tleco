@@ -64,10 +64,10 @@ jobs:
           gamma = tl.gofb(0.1)
           assert abs(gamma - 1.005) < 1e-3, gamma
 
-          values = tl.gofb(np.array([0.1, 0.25, 0.5]))
+          values = np.asarray(tl.gofb(np.array([0.1, 0.25, 0.5])))
           assert values.shape == (3,), values
 
-          sample = misc_func.power_law(1.0, np.array([1.0, 2.0, 3.0]), -2.0, 1.0, 3.0)
+          sample = np.asarray(misc_func.power_law(1.0, np.array([1.0, 2.0, 3.0]), -2.0, 1.0, 3.0))
           assert sample.shape == (3,), sample
 
           _ = constants.cLight
