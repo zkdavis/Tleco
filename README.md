@@ -126,10 +126,13 @@ The following Python packages are used in this project:
 
 - astropy 6.1.4
 - ebltable 0.5.2
+- matplotlib 3.9.2
+- maturin 1.5
+- numpy 2.1.2
 - pytest 8.3.3
+- scipy 1.14.1
 - toml 0.10.2
 - tqdm 4.66.5
-- maturin 1.5
 #### Python Version
 
 This project requires Python ^3.10.
