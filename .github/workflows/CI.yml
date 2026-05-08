@@ -48,11 +48,16 @@ jobs:
           python -m pip install maturin
           python -m pip install -r requirements.txt
 
-      - name: Build extension in-place
-        run: maturin develop --release
+      - name: Build wheel
+        run: maturin build --release --out dist
+
+      - name: Install built wheel
+        run: python -m pip install --force-reinstall --no-deps dist/*.whl
 
       - name: Run test suite
         run: pytest
+        env:
+          PYTHONPATH: comparisons
 
   prepare-release:
     name: Update version, README, and tag
