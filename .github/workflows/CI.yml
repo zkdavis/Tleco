@@ -104,6 +104,7 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           python -m pip install pipreqs poetry semver toml
+          python -m pip install -r requirements.txt
 
       - name: Determine release version
         id: versioning
