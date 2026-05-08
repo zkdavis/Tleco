@@ -1,12 +1,18 @@
 # Tleco
 
 `Tleco` stands for both _in the fire_ and _rise_ in the nahuatl language. `Tleco` is a numerical code that simulates particles _in relativistic plasma_, and the _rise of radiation_ from accelerating particles.
+### Tleco Paper
+
+- Davis, Z., Rueda-Becerril, J. M., & Giannios, D. 2024, ApJ, 976, 182, doi: 10.3847/1538-4357/ad8bc2
+
 ### Featured Publications:
 Tleco has already been used for several publications (previously called Paramo):
 
 - Rueda-Becerril, J. M., Harrison, A. O., & Giannios, D. 2021, MNRAS, 501, 4092, doi: 10.1093/mnras/staa3925
 - Davis, Z., Rueda-Becerril, J. M., & Giannios, D. 2022, MNRAS, 513, 5766, doi: 10.1093/mnras/stac1282
 - Combi, L., & Siegel, D. M. 2023, ApJ, 944, 28, doi: 10.3847/1538-4357/acac29
+- Desai, D. D., Haggerty, C. C., Shappee, B. J., Tucker, M. A., Davis, Z., Ashall, C., Chomiuk, L., Gootkin, K., Caprioli, D., Bret, A., & Hakobyan, H. 2025, MNRAS, 541, 2197, doi: 10.1093/mnras/staf1117
+- Wu, Z.-F., Guevara-Montoya, S., Beniamini, P., Giannios, D., Groselj, D., & Sironi, L. 2026, arXiv:2601.19135, doi: 10.48550/arXiv.2601.19135
 
 ## Installation
 
@@ -55,11 +61,27 @@ maturin develop
 * Open a pull request.
 
 
+# Requirements
+
+The following Python packages are used in this project:
+
+- astropy 6.1.4
+- ebltable 0.5.2
+- matplotlib 3.9.2
+- numpy 2.1.2
+- pytest 8.3.3
+- scipy 1.14.1
+- toml 0.10.2
+- tqdm 4.66.5
+- maturin 1.5
+#### Python Version
+
+This project requires Python ^3.10.
 # Functions
 This section is not complete and will be updated over time
 ### Rust Functions
 
-- **ic_iso_monochrome** - computes the emissivity($\frac{ergs}{cm^3 Sr}$) at frequency nuout(Hz) from inverse Compton (IC) scattering in an isotropic photon field assuming the photonfield is monochromatic [see in [src/radiation.rs:L356](https://github.com/zkdavis/Tleco/blob/master/src/radiation.rs#L356)]
+- **ic_iso_monochrome** - computes the emissivity($\frac{ergs}{cm^3 Sr}$) at frequency nuout(Hz) from inverse Compton (IC) scattering in an isotropic photon field assuming the photon field is monochromatic [see in [src/radiation.rs:L356](https://github.com/zkdavis/Tleco/blob/master/src/radiation.rs#L356)]
   - **Parameters:**
     - `nuout` (*f64*): frequency(Hz) in the comoving frame to compute emission at.
     - `uext` (*f64*): energy density($\frac{ergs}{cm^-3}$) of the external photon field in the comoving frame.
@@ -70,7 +92,7 @@ This section is not complete and will be updated over time
     - `jnu` (*f64*): emissivity($\frac{ergs}{cm^3 Sr}$) for frequency nuout
 
 
-- **ic_iso_monochrome_full** - computes the emissivity($\frac{ergs}{cm^3 Sr}$) from inverse Compton (IC) scattering in an isotropic photon field assuming the photonfield is monochromatic [see in [src/radiation.rs:L406](https://github.com/zkdavis/Tleco/blob/master/src/radiation.rs#L406)]
+- **ic_iso_monochrome_full** - computes the emissivity($\frac{ergs}{cm^3 Sr}$) from inverse Compton (IC) scattering in an isotropic photon field assuming the photon field is monochromatic [see in [src/radiation.rs:L406](https://github.com/zkdavis/Tleco/blob/master/src/radiation.rs#L406)]
   - **Parameters:**
     - `freqs` (*&Array1<f64>*): frequency(Hz) array in the comoving frame to compute emission over.
     - `uext` (*f64*): energy density($\frac{ergs}{cm^-3}$) of the external photon field in the comoving frame.
@@ -102,25 +124,13 @@ This section is not complete and will be updated over time
 
 ### Python Functions
 
-- **power_law** - Computes a power law function. [see in [pysrc/tleco/misc_func.py:L33](https://github.com/zkdavis/Tleco/blob/master/pysrc/tleco/misc_func.py#L33)]
+- **power_law** - Computes a power law function. [see in [pysrc/tleco/misc_func.py:L34](https://github.com/zkdavis/Tleco/blob/master/pysrc/tleco/misc_func.py#L34)]
   - **Parameters:**
+    - `n0` (*Any*): Normalization constant.
+    - `g` (*Any*): Array of input values.
+    - `p` (*Any*): Power law index.
+    - `g_min` (*Any*): Minimum value of Lorentz factor for the power law application.
+    - `g_max` (*Any*): Maximum value of Lorentz factor for the power law application.
+    - `normalize` (*Any*) (optional): bool if true normalizes the distribution before returning
   - **Returns:**
-    - `f` (**): Array of output values according to the power law.f = np.zeros_like(g)bounds = (g >= g_min) & (g <= g_max)f[bounds] = np.power(g, p)[bounds]if(normalize):f = f/np.trapz(f,g)return f*n0
-
-
-# Requirements
-
-The following Python packages are used in this project:
-
-- astropy 6.1.4
-- ebltable 0.5.2
-- matplotlib 3.9.2
-- numpy 2.1.2
-- pytest 8.3.3
-- scipy 1.14.1
-- toml 0.10.2
-- tqdm 4.66.5
-- maturin 1.5
-#### Python Version
-
-This project requires Python ^3.10.
+    - `f` (*Any*): Array of output values according to the power law.
