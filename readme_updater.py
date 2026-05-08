@@ -280,6 +280,8 @@ def generate_requirements_txt(project_path, exclude_dirs=None,  additional_deps=
     """
     Uses pipreqs to generate requirements.txt for the given project path.
     """
+    requirements_path = f"{project_path}/requirements.txt"
+    existing_requirements = read_requirements(requirements_path) if os.path.exists(requirements_path) else []
     command = ['pipreqs', '--force', '--use-local', project_path]
 
     if exclude_dirs:
@@ -288,11 +290,18 @@ def generate_requirements_txt(project_path, exclude_dirs=None,  additional_deps=
 
     subprocess.run(command, check=True)
 
+    generated_requirements = read_requirements(requirements_path)
+    merged_requirements = {package_name: version for package_name, version in existing_requirements}
+    for package_name, version in generated_requirements:
+        merged_requirements[package_name] = version
     if additional_deps:
-        requirements_path = f"{project_path}/requirements.txt"
-        with open(requirements_path, "a") as req_file:
-            for dep in additional_deps:
-                req_file.write(f"{dep}\n")
+        for dep in additional_deps:
+            package_name, version = dep.split("==", 1)
+            merged_requirements[package_name.strip()] = version.strip()
+
+    with open(requirements_path, "w", encoding="utf-8") as req_file:
+        for package_name in sorted(merged_requirements):
+            req_file.write(f"{package_name}=={merged_requirements[package_name]}\n")
 
 def read_requirements(requirements_path):
     requirements = []

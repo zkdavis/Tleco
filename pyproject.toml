@@ -9,7 +9,7 @@ summary = "Tleco: Tleco stands for both in the fire and rise in the nahuatl lang
 license = "GPL-3.0-only"
 requires-python = ">=3.9"
 classifiers = [ "Programming Language :: Rust", "Programming Language :: Python :: Implementation :: CPython", "Programming Language :: Python :: Implementation :: PyPy",]
-dependencies = [ "astropy == 6.1.4", "ebltable == 0.5.2", "pytest == 8.3.3", "toml == 0.10.2", "tqdm == 4.66.5",]
+dependencies = [ "astropy == 6.1.4", "ebltable == 0.5.2", "matplotlib == 3.9.2", "numpy == 2.1.2", "pytest == 8.3.3", "scipy == 1.14.1", "toml == 0.10.2", "tqdm == 4.66.5",]
 [[project.authors]]
 name = "Jesus M Rueda-Becerril"
 email = "jm.ruebe@gmail.com"
@@ -34,7 +34,10 @@ license = "GPL-3.0-only"
 python = "^3.10"
 astropy = "6.1.4"
 ebltable = "0.5.2"
+matplotlib = "3.9.2"
+numpy = "2.1.2"
 pytest = "8.3.3"
+scipy = "1.14.1"
 toml = "0.10.2"
 tqdm = "4.66.5"
 maturin = "1.5"
