@@ -142,7 +142,7 @@ jobs:
           set -euo pipefail
           git config user.email "action@github.com"
           git config user.name "GitHub Action"
-          git add VERSION.txt pyproject.toml Cargo.toml README.md requirements.txt
+          git add VERSION.txt pyproject.toml poetry.lock Cargo.toml README.md requirements.txt
           git commit -m "[Trigger-Release] Increment version to ${NEW_VERSION}"
           git push origin "HEAD:${GITHUB_REF_NAME}"
 

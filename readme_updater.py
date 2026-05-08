@@ -280,7 +280,7 @@ def generate_requirements_txt(project_path, exclude_dirs=None,  additional_deps=
     """
     Uses pipreqs to generate requirements.txt for the given project path.
     """
-    command = ['pipreqs', '--force', project_path]
+    command = ['pipreqs', '--force', '--use-local', project_path]
 
     if exclude_dirs:
         exclude_dirs_str = ','.join(exclude_dirs)
@@ -294,14 +294,42 @@ def generate_requirements_txt(project_path, exclude_dirs=None,  additional_deps=
             for dep in additional_deps:
                 req_file.write(f"{dep}\n")
 
+def read_requirements(requirements_path):
+    requirements = []
+    with open(requirements_path, "r", encoding="utf-8") as req_file:
+        for line in req_file:
+            entry = line.strip()
+            if not entry or entry.startswith("#"):
+                continue
+            package_name, version = entry.split("==", 1)
+            requirements.append((package_name.strip(), version.strip()))
+    return requirements
+
+
 def update_pyproject_toml(project_path):
     """
-    Update pyproject.toml using poetry.
+    Update pyproject.toml deterministically from requirements.txt.
     """
-    with open(f"{project_path}/requirements.txt", "r") as req_file:
-        for line in req_file:
-            package_name, version = line.strip().split('==')
-            subprocess.run(['poetry', 'add', f'{package_name}=={version}'], check=True)
+    pyproject_path = f"{project_path}/pyproject.toml"
+    requirements = read_requirements(f"{project_path}/requirements.txt")
+
+    with open(pyproject_path, "r", encoding="utf-8") as pyproject_file:
+        data = toml.load(pyproject_file)
+
+    poetry_dependencies = data["tool"]["poetry"]["dependencies"]
+    python_requirement = poetry_dependencies["python"]
+    new_poetry_dependencies = {"python": python_requirement}
+    for package_name, version in requirements:
+        new_poetry_dependencies[package_name] = version
+    data["tool"]["poetry"]["dependencies"] = new_poetry_dependencies
+
+    project_dependencies = [f"{package_name} == {version}" for package_name, version in requirements if package_name != "maturin"]
+    data["project"]["dependencies"] = project_dependencies
+
+    with open(pyproject_path, "w", encoding="utf-8") as pyproject_file:
+        toml.dump(data, pyproject_file)
+
+    subprocess.run(["poetry", "lock"], check=True, cwd=project_path)
 
 
 def get_python_version_requirement(pyproject_path):
