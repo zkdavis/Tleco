@@ -1,4 +1,4 @@
-astropy==6.1.4
+astropy==7.2.0
 ebltable==0.5.2
 matplotlib==3.9.2
 maturin==1.5

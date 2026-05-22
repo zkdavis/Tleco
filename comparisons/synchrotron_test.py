@@ -10,7 +10,7 @@ def run_test(num_g,num_f):
     ub=1
     B=np.sqrt(np.pi*8*ub)
     g_array = np.logspace(1, 3, num_g)
-    n_array = n0*(g_array ** -p) / np.trapz(g_array ** -p, g_array)
+    n_array = n0*(g_array ** -p) / np.trapezoid(g_array ** -p, g_array)
     j_syn = rt.j_syn_explicit(nu_s,B,n_array,g_array) * 4*np.pi
     j_syn_para = np.array(tl.syn_emissivity_full(nu_s,g_array,n_array,B,False))[0] * 4*np.pi
 
@@ -100,7 +100,7 @@ def plot_comparison_and_error():
     num_f = 300#150
     scale_mult = 4
     nu_s, j_syn, j_syn_para = run_test(num_g=num_g, num_f=num_f)
-    print(np.trapz(j_syn, nu_s))
+    print(np.trapezoid(j_syn, nu_s))
     fig, ax = plt.subplots(figsize=(16, 12))
 
     ax.set_xscale("log")
