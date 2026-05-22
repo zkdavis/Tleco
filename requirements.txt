@@ -1,4 +1,4 @@
-astropy==6.1.4
+astropy==7.2.0
 ebltable==0.5.2
 pytest==8.3.3
 toml==0.10.2

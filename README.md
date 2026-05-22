@@ -124,7 +124,7 @@ This section is not complete and will be updated over time
 
 The following Python packages are used in this project:
 
-- astropy 6.1.4
+- astropy 7.2.0
 - ebltable 0.5.2
 - pytest 8.3.3
 - toml 0.10.2
