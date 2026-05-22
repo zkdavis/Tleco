@@ -135,4 +135,4 @@ The following Python packages are used in this project:
 - tqdm 4.66.5
 #### Python Version
 
-This project requires Python ^3.10.
+This project requires Python ^3.11.
