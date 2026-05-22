@@ -50,7 +50,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        target: [x64, x86]
+        target: [x64]
     steps:
       - name: Check out repository
         uses: actions/checkout@v4
