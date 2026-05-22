@@ -33,7 +33,7 @@ def j_ic_iso(eps_s: float, eps_array, u: typing.Callable, n_array: [float], g_ar
 
     def g_int(Fc_array, g_min_i, g_max_i):
         # assumes g_array is logspaced
-        return np.trapz(n_array[g_min_i:g_max_i] * Fc_array[g_min_i:g_max_i] * np.log(10) / g_array[g_min_i:g_max_i],
+        return np.trapezoid(n_array[g_min_i:g_max_i] * Fc_array[g_min_i:g_max_i] * np.log(10) / g_array[g_min_i:g_max_i],
                         np.log10(g_array[g_min_i:g_max_i]))
 
     g_int_array = np.zeros_like(eps_array)
@@ -50,7 +50,7 @@ def j_ic_iso(eps_s: float, eps_array, u: typing.Callable, n_array: [float], g_ar
         gmax_i = np.argmin(np.abs(g_array - g_max_array[i]))
         g_int_array[i] = g_int(Fc_i_array, gmin_i, gmax_i)
     # assumes eps_array is logspaced
-    return fcon * np.trapz(u(eps_array) * g_int_array * np.log(10) / eps_array, np.log10(eps_array))
+    return fcon * np.trapezoid(u(eps_array) * g_int_array * np.log(10) / eps_array, np.log10(eps_array))
 
 
 def j_ic_iso_full_dermer(eps_s_array: [float], eps_array: [float], u: typing.Callable, n_array: [float],
@@ -84,7 +84,7 @@ def j_ic_mono_pwl_electron_dermer(eps_s: float, eps_in, u0, p, n_array: [float],
             fg[i] = 1
     eps_hat = eps_s / (4 * eps_in * np.power(g_array, 2))
     integrand = n_array * (fg - eps_hat) * np.power(g_array, -1) * np.log(10)
-    f = np.trapz(integrand[gmin_i:], np.log10(g_array[gmin_i:]))
+    f = np.trapezoid(integrand[gmin_i:], np.log10(g_array[gmin_i:]))
 
     return C.hPlanck * fcon * f / (eps_s * C.energy_e)
 

@@ -13,7 +13,7 @@ def analytical_form(g):
 
 def analytical_solution(n0, g):
     integrand_values = analytical_form(g)
-    integral_approx = np.trapz(integrand_values, g)
+    integral_approx = np.trapezoid(integrand_values, g)
     x = n0 / integral_approx
     return x * analytical_form(g)
 
@@ -21,7 +21,7 @@ def analytical_solution(n0, g):
 def get_n0(p, gmin, gmax):
     x_values = np.logspace(np.log10(gmin), np.log10(gmax), num=10000)
     y_values = x_values ** p
-    return np.trapz(y_values, x_values)
+    return np.trapezoid(y_values, x_values)
 
 
 def plot_setup():
@@ -77,7 +77,7 @@ def run_test(numg, numt, n0):
     p, gcut1, g2cut1 = 0, 1e4, 1e6
     n1 = np.zeros([numt, numg])
     n1[0, :] = misc_func.power_law(1, g, p, gcut1, g2cut1)
-    n1[0, :] = n0 * n1[0, :] / np.trapz(n1[0, :], g)
+    n1[0, :] = n0 * n1[0, :] / np.trapezoid(n1[0, :], g)
 
     for i in range(1, numt):
         dt = t[i] - t[i - 1]
@@ -158,7 +158,7 @@ def run_time_test(numt,numg):
     tlc = tmax * 100
     n1 = np.zeros([numt, numg])
     n1[0, :] = fp_test.eq_59_park1995(1e-4, g)
-    n1[0, :] = n1[0, :] / np.trapz(n1[0, :], g)
+    n1[0, :] = n1[0, :] / np.trapezoid(n1[0, :], g)
 
     for i in range(1, numt):
         dt = t[i] - t[i - 1]
@@ -185,11 +185,11 @@ def plot_convergence_results_time(numts, numg, tt):
         g, n, tr = run_time_test(mt, numg)
         tind = np.argmin(np.abs(tr - tt))
         ei = n[tind, :]
-        norm = np.trapz(fp_test.eq_59_park1995(1e-4, g)*g*np.log(10),np.log10(g))
+        norm = np.trapezoid(fp_test.eq_59_park1995(1e-4, g)*g*np.log(10),np.log10(g))
         yt = np.array(fp_test.eq_59_park1995(tt + 1e-4, g))
-        norm2 = np.trapz(yt,g)
+        norm2 = np.trapezoid(yt,g)
         ef = n0 * np.array(fp_test.eq_59_park1995(tt + 1e-4, g)) / norm
-        nio = np.trapz(ei, g) / np.trapz(n[0, :], g)
+        nio = np.trapezoid(ei, g) / np.trapezoid(n[0, :], g)
         nios.append(nio)
         minargs = np.argsort(np.abs(ei - 1e-8))
         ma1 = minargs[0]

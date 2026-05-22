@@ -14,16 +14,16 @@ def run_test(num_g,num_f):
     nu_s2 = np.logspace(8, 25, num_f)
     eps_s = nu_s2 * C.hPlanck / C.energy_e
     g_array = np.logspace(1, 3, num_g)
-    n_array = n0*(g_array ** -p) / np.trapz(g_array ** -p, g_array)
+    n_array = n0*(g_array ** -p) / np.trapezoid(g_array ** -p, g_array)
 
     def ub(epsa):
-        # return rt.BB_photon_density(epsa,Temp)*epsa*u_bb/np.trapz(rt.BB_photon_density(epsa,Temp)*epsa,epsa)
-        return rt.BB_energy_density(epsa, Temp) * u_bb / np.trapz(rt.BB_energy_density(epsa, Temp), epsa/C.hPlanck)
+        # return rt.BB_photon_density(epsa,Temp)*epsa*u_bb/np.trapezoid(rt.BB_photon_density(epsa,Temp)*epsa,epsa)
+        return rt.BB_energy_density(epsa, Temp) * u_bb / np.trapezoid(rt.BB_energy_density(epsa, Temp), epsa/C.hPlanck)
 
     def ub_dermer(epsa):
         epsa = epsa * C.energy_e
-        # return rt.BB_photon_density(epsa, Temp) * epsa * u_bb / np.trapz(rt.BB_photon_density(epsa, Temp) * epsa, epsa)
-        return rt.BB_energy_density(epsa, Temp) * u_bb / np.trapz(rt.BB_energy_density(epsa, Temp), epsa/C.hPlanck)
+        # return rt.BB_photon_density(epsa, Temp) * epsa * u_bb / np.trapezoid(rt.BB_photon_density(epsa, Temp) * epsa, epsa)
+        return rt.BB_energy_density(epsa, Temp) * u_bb / np.trapezoid(rt.BB_energy_density(epsa, Temp), epsa/C.hPlanck)
 
 
     j_ic = rt.j_ic_iso_full_dermer(eps_s, eps_s,ub_dermer, n_array, g_array)
@@ -117,7 +117,7 @@ def plot_comparison_and_error():
     scale_mult = 4
     nu_s, j_ic, j_ic_para = run_test(num_g=num_g, num_f=num_f)
 
-    print(np.trapz(j_ic, nu_s))
+    print(np.trapezoid(j_ic, nu_s))
 
     fig, ax = plt.subplots(figsize=(16, 12))
 

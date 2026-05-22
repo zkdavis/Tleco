@@ -155,7 +155,7 @@ def run_katarzynski():
             #     vmax_kn = 3 * cons.energy_e / (4 * cons.hPlanck * gi)
             #     vmax = min([vmax_kn,fmax])
             #     vmax_i = np.argmin(np.abs(f-vmax))
-            #     urad = (np.pi * 4 / cons.cLight)*np.trapz(I_s7[i,:vmax_i],f[:vmax_i])
+            #     urad = (np.pi * 4 / cons.cLight)*np.trapezoid(I_s7[i,:vmax_i],f[:vmax_i])
             #     dotgKN7[j] = (4 * cons.sigmaT* urad * np.power(gi,2)/ (3 * cons.me * cons.cLight))
 
             dotgKN7 = para.rad_cool_pwl(g, f, 4 * np.pi * I_s7[i, :] / cons.cLight, cool_withKN)
@@ -177,7 +177,7 @@ def run_katarzynski():
             #     vmax_kn = 3 * cons.energy_e / (4 * cons.hPlanck * gi)
             #     vmax = min([vmax_kn, fmax])
             #     vmax_i = np.argmin(np.abs(f - vmax))
-            #     urad = (np.pi * 4 / cons.cLight) * np.trapz(I_s8[i, :vmax_i], f[:vmax_i])
+            #     urad = (np.pi * 4 / cons.cLight) * np.trapezoid(I_s8[i, :vmax_i], f[:vmax_i])
             #     dotgKN8[j] = (4 * cons.sigmaT * urad * np.power(gi, 2) / (3 * cons.me * cons.cLight))
 
             dotgKN8 = para.rad_cool_pwl(g, f, 4 * np.pi * I_s8[i, :] / cons.cLight, cool_withKN)
