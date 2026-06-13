@@ -1,3 +1,4 @@
+import ast
 import os
 import re
 import fnmatch
@@ -47,7 +48,93 @@ def should_ignore(path, ignore_patterns):
     return ret
 
 
+def parse_tagged_comment_block(comment_block):
+    func_desc_pattern = re.compile(r'@func: (.*?)(?=(@param|@return|$))', re.DOTALL)
+    param_desc_pattern = re.compile(r'@param (.*?): (.*?)(?=(@param|@return|$))', re.DOTALL)
+    return_desc_pattern = re.compile(r'@return\s+(.*?):\s+(.*?)(?=(@param|@func|$))', re.DOTALL)
+
+    func_desc_match = re.search(func_desc_pattern, comment_block)
+    param_desc_matches = re.finditer(param_desc_pattern, comment_block)
+    return_desc_match = re.search(return_desc_pattern, comment_block)
+
+    func_description = func_desc_match.group(1).strip() if func_desc_match else ""
+    param_descriptions = {}
+    for match in param_desc_matches:
+        raw_name = match.group(1).strip()
+        param_name = re.split(r'[\s(]', raw_name, 1)[0]
+        param_descriptions[param_name] = match.group(2).strip()
+    return_description = f"{return_desc_match.group(1).strip()}: {return_desc_match.group(2).strip()}" if return_desc_match else ""
+
+    func_description = func_description.replace("\n", " ")
+    for key in list(param_descriptions.keys()):
+        param_descriptions[key] = param_descriptions[key].replace("\n", " ")
+    return_description = return_description.replace("\n", " ")
+
+    return {"description": func_description, "params": param_descriptions, "return": return_description}
+
+
+def build_python_signature(node):
+    params = []
+
+    positional = list(node.args.args)
+    defaults = [None] * (len(positional) - len(node.args.defaults)) + list(node.args.defaults)
+    for arg, default in zip(positional, defaults):
+        param = arg.arg
+        if arg.annotation is not None:
+            param += f": {ast.unparse(arg.annotation)}"
+        if default is not None:
+            param += f"={ast.unparse(default)}"
+        params.append(param)
+
+    if node.args.vararg:
+        param = f"*{node.args.vararg.arg}"
+        if node.args.vararg.annotation is not None:
+            param += f": {ast.unparse(node.args.vararg.annotation)}"
+        params.append(param)
+
+    for arg, default in zip(node.args.kwonlyargs, node.args.kw_defaults):
+        param = arg.arg
+        if arg.annotation is not None:
+            param += f": {ast.unparse(arg.annotation)}"
+        if default is not None:
+            param += f"={ast.unparse(default)}"
+        params.append(param)
+
+    if node.args.kwarg:
+        param = f"**{node.args.kwarg.arg}"
+        if node.args.kwarg.annotation is not None:
+            param += f": {ast.unparse(node.args.kwarg.annotation)}"
+        params.append(param)
+
+    signature = f"def {node.name}({', '.join(params)})"
+    if node.returns is not None:
+        signature += f" -> {ast.unparse(node.returns)}"
+    return signature + ":"
+
+
+def extract_python_functions_from_file(file_path):
+    with open(file_path, "r", encoding="utf-8") as file:
+        source = file.read()
+
+    module = ast.parse(source, filename=file_path)
+    functions = []
+    for node in module.body:
+        if not isinstance(node, ast.FunctionDef):
+            continue
+
+        docstring = ast.get_docstring(node, clean=False)
+        if not docstring or "@func:" not in docstring:
+            continue
+
+        functions.append((node.lineno, build_python_signature(node), parse_tagged_comment_block(docstring)))
+
+    return functions
+
+
 def extract_functions_from_file(file_path):
+    if file_path.endswith(".py"):
+        return extract_python_functions_from_file(file_path)
+
     with open(file_path, 'r') as file:
         lines = file.readlines()
 
@@ -76,24 +163,7 @@ def extract_functions_from_file(file_path):
                             break
 
             if "@func:" in comment_block:
-                func_desc_pattern = re.compile(r'@func: (.*?)(?=(@param|@return|$))', re.DOTALL)
-                param_desc_pattern = re.compile(r'@param (.*?): (.*?)(?=(@param|@return|$))', re.DOTALL)
-                return_desc_pattern = re.compile(r'@return\s+(.*?):\s+(.*?)(?=(@param|@func|$))', re.DOTALL)
-
-                func_desc_match = re.search(func_desc_pattern, comment_block)
-                param_desc_matches = re.finditer(param_desc_pattern, comment_block)
-                return_desc_match = re.search(return_desc_pattern, comment_block)
-
-                func_description = func_desc_match.group(1).strip() if func_desc_match else ""
-                param_descriptions = {m.group(1).strip(): m.group(2).strip() for m in param_desc_matches}
-                return_description = f"{return_desc_match.group(1).strip()}: {return_desc_match.group(2).strip()}" if return_desc_match else ""
-
-                func_description = func_description.replace("\n","")
-                for keys in param_descriptions.keys():
-                    param_descriptions[keys] = param_descriptions[keys].replace("\n","")
-                return_description = return_description.replace("\n","")
-
-                description = {"description": func_description, "params": param_descriptions, "return": return_description}
+                description = parse_tagged_comment_block(comment_block)
 
                 if function_match_rust:
                     functions.append((i, function_signature, description))
@@ -146,13 +216,19 @@ def parse_function_signature(signature, language):
             params = [(name, ty.strip(), 'optional' if 'Option<' in ty else '') for name, ty in params]
             return_type = param_section.group(2).strip()  # Capture the return type
     elif language == "python":
-        param_section = signature.split("):", 1)
-        if len(param_section) > 1 and "->" in param_section[1]:
-            params_str, return_type_str = param_section
-            param_pattern = re.compile(r'(\w+)\s*:\s*([^=,]+)(\s*=\s*.+)?')
-            params = param_pattern.findall(params_str + ")")
-            params = [(name, ty.strip(), 'optional' if default else '') for name, ty, default in params]
-            return_type = return_type_str.split("->", 1)[1].strip()
+        match = re.match(r'^def\s+\w+\((.*)\)(?:\s*->\s*([^:]+))?:$', signature.strip())
+        if match:
+            params_str = match.group(1).strip()
+            return_type = match.group(2).strip() if match.group(2) else "Any"
+            if params_str:
+                for raw_param in params_str.split(","):
+                    raw_param = raw_param.strip()
+                    if not raw_param or raw_param in {"*", "/"}:
+                        continue
+                    raw_param = raw_param.lstrip("*")
+                    name_and_type, has_default, _ = raw_param.partition("=")
+                    name, has_annotation, annotation = name_and_type.partition(":")
+                    params.append((name.strip(), annotation.strip() if has_annotation else "Any", 'optional' if has_default else ''))
 
     return params, return_type
 
@@ -191,8 +267,8 @@ def write_functions_to_readme(rust_functions, python_functions, readme_path, rep
                 readme.write('  - **Parameters:**\n')
                 params, return_type = parse_function_signature(function_signature, "python")
                 for param, param_type, optional in params:
-                    optional_str = "(optional)" if optional else ""
-                    readme.write(f'    - `{param}` (*{param_type}*{optional_str}): {description["params"].get(param, "No description")}\n')
+                    optional_str = " (optional)" if optional else ""
+                    readme.write(f'    - `{param}` (*{param_type}*){optional_str}: {description["params"].get(param, "No description")}\n')
                 if description["return"]:
                     return_var, return_desc = description["return"].split(":", 1)
                     readme.write('  - **Returns:**\n')
@@ -204,7 +280,9 @@ def generate_requirements_txt(project_path, exclude_dirs=None,  additional_deps=
     """
     Uses pipreqs to generate requirements.txt for the given project path.
     """
-    command = ['pipreqs', '--force', project_path]
+    requirements_path = f"{project_path}/requirements.txt"
+    existing_requirements = read_requirements(requirements_path) if os.path.exists(requirements_path) else []
+    command = ['pipreqs', '--force', '--use-local', project_path]
 
     if exclude_dirs:
         exclude_dirs_str = ','.join(exclude_dirs)
@@ -212,20 +290,55 @@ def generate_requirements_txt(project_path, exclude_dirs=None,  additional_deps=
 
     subprocess.run(command, check=True)
 
+    generated_requirements = read_requirements(requirements_path)
+    merged_requirements = {package_name: version for package_name, version in existing_requirements}
+    for package_name, version in generated_requirements:
+        merged_requirements[package_name] = version
     if additional_deps:
-        requirements_path = f"{project_path}/requirements.txt"
-        with open(requirements_path, "a") as req_file:
-            for dep in additional_deps:
-                req_file.write(f"{dep}\n")
+        for dep in additional_deps:
+            package_name, version = dep.split("==", 1)
+            merged_requirements[package_name.strip()] = version.strip()
+
+    with open(requirements_path, "w", encoding="utf-8") as req_file:
+        for package_name in sorted(merged_requirements):
+            req_file.write(f"{package_name}=={merged_requirements[package_name]}\n")
+
+def read_requirements(requirements_path):
+    requirements = []
+    with open(requirements_path, "r", encoding="utf-8") as req_file:
+        for line in req_file:
+            entry = line.strip()
+            if not entry or entry.startswith("#"):
+                continue
+            package_name, version = entry.split("==", 1)
+            requirements.append((package_name.strip(), version.strip()))
+    return requirements
+
 
 def update_pyproject_toml(project_path):
     """
-    Update pyproject.toml using poetry.
+    Update pyproject.toml deterministically from requirements.txt.
     """
-    with open(f"{project_path}/requirements.txt", "r") as req_file:
-        for line in req_file:
-            package_name, version = line.strip().split('==')
-            subprocess.run(['poetry', 'add', f'{package_name}=={version}'], check=True)
+    pyproject_path = f"{project_path}/pyproject.toml"
+    requirements = read_requirements(f"{project_path}/requirements.txt")
+
+    with open(pyproject_path, "r", encoding="utf-8") as pyproject_file:
+        data = toml.load(pyproject_file)
+
+    poetry_dependencies = data["tool"]["poetry"]["dependencies"]
+    python_requirement = poetry_dependencies["python"]
+    new_poetry_dependencies = {"python": python_requirement}
+    for package_name, version in requirements:
+        new_poetry_dependencies[package_name] = version
+    data["tool"]["poetry"]["dependencies"] = new_poetry_dependencies
+
+    project_dependencies = [f"{package_name} == {version}" for package_name, version in requirements if package_name != "maturin"]
+    data["project"]["dependencies"] = project_dependencies
+
+    with open(pyproject_path, "w", encoding="utf-8") as pyproject_file:
+        toml.dump(data, pyproject_file)
+
+    subprocess.run(["poetry", "lock"], check=True, cwd=project_path)
 
 
 def get_python_version_requirement(pyproject_path):

@@ -13,7 +13,7 @@ def run_test(num_g,num_f):
     nu_s = np.logspace(8, 25, num_f)
     eps_s = nu_s * C.hPlanck / C.energy_e
     g_array = np.logspace(1, 3, num_g)
-    n_array = n0*(g_array ** -p) / np.trapz(g_array ** -p, g_array)
+    n_array = n0*(g_array ** -p) / np.trapezoid(g_array ** -p, g_array)
     j_ic = rt.j_ic_mono_pwl_electron_dermer_full(eps_s, eps_in, u0, p, n_array, g_array)
     j_ic_para = np.array(tl.ic_iso_monochrome_full(nu_s, u0, nu_in, n_array, g_array))
 
@@ -104,7 +104,7 @@ def plot_comparison_and_error():
     scale_mult = 4
     nu_s, j_ic, j_ic_para = run_test(num_g=num_g, num_f=num_f)
 
-    print(np.trapz(j_ic,nu_s))
+    print(np.trapezoid(j_ic,nu_s))
 
     fig, ax = plt.subplots(figsize=(16, 12))
 

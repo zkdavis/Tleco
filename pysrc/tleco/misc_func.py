@@ -26,7 +26,7 @@ def broken_pwl(n0, g, p1, p2, gmin_cut, g2_cut):
         i0 = np.argmax(g > g2_cut) - 1
         mask2 = g > g2_cut
         f[mask2] = f[i0] * (g[mask2] / g[i0]) ** p2
-    f = n0 * f / np.trapz(f,g)
+    f = n0 * f / np.trapezoid(f,g)
 
     return f
 
@@ -46,7 +46,7 @@ def power_law(n0, g, p, g_min, g_max,normalize=False):
     bounds = (g >= g_min) & (g <= g_max)
     f[bounds] = np.power(g, p)[bounds]
     if(normalize):
-        f = f/np.trapz(f,g)
+        f = f/np.trapezoid(f,g)
     return f*n0
 
 
