@@ -65,7 +65,7 @@ maturin develop
 This section is not complete and will be updated over time
 ### Rust Functions
 
-- **ic_iso_monochrome** - computes the emissivity($\frac{ergs}{cm^3 Sr}$) at frequency nuout(Hz) from inverse Compton (IC) scattering in an isotropic photon field assuming the photon field is monochromatic [see in [src/radiation.rs:L356](https://github.com/zkdavis/Tleco/blob/master/src/radiation.rs#L356)]
+- **ic_iso_monochrome** - computes the emissivity($\frac{ergs}{cm^3 Sr}$) at frequency nuout(Hz) from inverse Compton (IC) scattering in an isotropic photon field assuming the photon field is monochromatic [see in [src/radiation.rs:L358](https://github.com/zkdavis/Tleco/blob/master/src/radiation.rs#L358)]
   - **Parameters:**
     - `nuout` (*f64*): frequency(Hz) in the comoving frame to compute emission at.
     - `uext` (*f64*): energy density($\frac{ergs}{cm^-3}$) of the external photon field in the comoving frame.
@@ -76,7 +76,7 @@ This section is not complete and will be updated over time
     - `jnu` (*f64*): emissivity($\frac{ergs}{cm^3 Sr}$) for frequency nuout
 
 
-- **ic_iso_monochrome_full** - computes the emissivity($\frac{ergs}{cm^3 Sr}$) from inverse Compton (IC) scattering in an isotropic photon field assuming the photon field is monochromatic [see in [src/radiation.rs:L406](https://github.com/zkdavis/Tleco/blob/master/src/radiation.rs#L406)]
+- **ic_iso_monochrome_full** - computes the emissivity($\frac{ergs}{cm^3 Sr}$) from inverse Compton (IC) scattering in an isotropic photon field assuming the photon field is monochromatic [see in [src/radiation.rs:L408](https://github.com/zkdavis/Tleco/blob/master/src/radiation.rs#L408)]
   - **Parameters:**
     - `freqs` (*&Array1<f64>*): frequency(Hz) array in the comoving frame to compute emission over.
     - `uext` (*f64*): energy density($\frac{ergs}{cm^-3}$) of the external photon field in the comoving frame.
@@ -87,7 +87,7 @@ This section is not complete and will be updated over time
     - `jic` (*Array1<f64>*): emissivity($\frac{ergs}{cm^3 Sr}$) for frequency range freq
 
 
-- **rad_cool_pwl** - computes the radiative inverse Compton cooling ($\frac{\partial g}{\partial t}$ [$s^{-1}$]) from isotropic photon field uu($\frac{ergs}{cm^-3}$) [see in [src/radiation.rs:L502](https://github.com/zkdavis/Tleco/blob/master/src/radiation.rs#L502)]
+- **rad_cool_pwl** - computes the radiative inverse Compton cooling ($\frac{\partial g}{\partial t}$ [$s^{-1}$]) from isotropic photon field uu($\frac{ergs}{cm^-3}$) [see in [src/radiation.rs:L504](https://github.com/zkdavis/Tleco/blob/master/src/radiation.rs#L504)]
   - **Parameters:**
     - `gg` (*&Array1<f64>*): Lorentz factor grid
     - `freqs` (*&Array1<f64>*): frequency(Hz) array in the comoving frame.
@@ -97,7 +97,7 @@ This section is not complete and will be updated over time
     - `dotg` (*Array1<f64>*): radiative cooling ($\frac{\partial g}{\partial t}$ [$s^{-1}$])
 
 
-- **rad_cool_mono** - computes the radiative inverse Compton cooling ($\frac{\partial g}{\partial t}$ [$s^{-1}$]) from isotropic monotonic photon field u0($\frac{ergs}{cm^-3}$) [see in [src/radiation.rs:L557](https://github.com/zkdavis/Tleco/blob/master/src/radiation.rs#L557)]
+- **rad_cool_mono** - computes the radiative inverse Compton cooling ($\frac{\partial g}{\partial t}$ [$s^{-1}$]) from isotropic monotonic photon field u0($\frac{ergs}{cm^-3}$) [see in [src/radiation.rs:L559](https://github.com/zkdavis/Tleco/blob/master/src/radiation.rs#L559)]
   - **Parameters:**
     - `gg` (*&Array1<f64>*): Lorentz factor grid
     - `nu0` (*f64*): frequency(Hz) in the comoving frame of the photon field u0.
